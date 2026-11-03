@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# SQLite
+web/db.sqlite3
+
+# Django collected static
+/web/collected_static/
+
+# Editor files
+.vscode/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+
+# Env files
+.env
+
+node_modules/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.next/
+dist/
+build/
+coverage/
+__pycache__/
+*.pyc
+*.log
+
+# Private database transfers and backups
+.private-transfer/
+.publish_checkout/
+web/db.before_*.sqlite3
+
+# Firebase local configuration and private server credentials
+owner_admin_app/config/firebase.android.json
+owner_admin_app/config/firebase.ios.json
+**/firebase-service-account*.json
+**/*-firebase-adminsdk-*.json
+owner_admin_app/android/app/google-services.json
+owner_admin_app/ios/Runner/GoogleService-Info.plist

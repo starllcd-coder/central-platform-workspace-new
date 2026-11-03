@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install --upgrade pip==26.1.2 setuptools==80.9.0
+      - run: python -m pip install -r requirements.txt -r requirements-audit.txt
+      - run: python -m pip check
+      - run: python -m pip_audit -r requirements.txt
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py test --verbosity 1
+      - name: Production deployment check
+        env:
+          DJANGO_ENV: production
+          DJANGO_SECRET_KEY: "ci-only-A9x-B8y-C7z-D6w-E5v-F4u-G3t-H2s-J1k-L0m-N9p-Q8r-S7q"
+          TENANT_DATABASE_ENCRYPTION_KEY: "ci-only-independent-encryption-key-A1b2C3d4E5f6G7h8"
+          CONNECTOR_SHARED_SECRET: "ci-only-connector-secret-A1b2C3d4E5f6"
+          MARKETPLACE_FINALIZE_SECRET: "ci-only-marketplace-secret-A1b2C3d4E5f6"
+          NEXIVO_LEAD_SHARED_SECRET: "ci-only-nexivo-lead-secret-A1b2C3d4E5f6"
+          PAYMENT_SERVICE_SECRET: "ci-only-payment-secret-A1b2C3d4E5f6"
+          PAYMENT_GATEWAY_MODE: disabled
+          DJANGO_ALLOWED_HOSTS: central.example.test
+          DJANGO_DB_BACKEND: postgres
+          DJANGO_CACHE_URL: redis://:ci-cache-password@127.0.0.1:6379/1
+          SMS_PROVIDER: configured-provider
+          EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+          EMAIL_HOST: smtp.example.test
+          DEFAULT_FROM_EMAIL: noreply@example.test
+        run: python manage.py check --deploy

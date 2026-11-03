@@ -1,0 +1,78 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Demo Requests{% endblock %}
+{% block page_content %}
+<section class="card">
+  <div class="row" style="margin-bottom:12px;">
+    <h2 class="section-title" style="margin:0;">Demo Requests</h2>
+    <a class="btn btn-soft" href="{% url 'demo-request-create' %}" style="width:auto;">New Request</a>
+  </div>
+  <table class="list">
+    <thead>
+      <tr>
+        <th>Business</th>
+        <th>Requested By</th>
+        <th>Module</th>
+        <th>Duration</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in demo_requests %}
+      <tr>
+        <td>
+          <div>{{ row.business_name }}</div>
+          <div class="small">{{ row.owner_email }}{% if row.requested_tenant_code %} | {{ row.requested_tenant_code }}{% endif %}</div>
+        </td>
+        <td>{{ row.requested_by.username|default:"-" }}</td>
+        <td>
+          {{ row.get_product_interest_display|default:row.get_module_type_display }}
+          <div class="small">Source: {{ row.get_source_display }}</div>
+        </td>
+        <td>{{ row.requested_duration_days }} days</td>
+        <td>
+          <span class="badge {% if row.status == 'approved' %}success{% elif row.status == 'requested' %}pending{% else %}off{% endif %}">
+            {{ row.get_status_display }}
+          </span>
+          {% if row.approved_tenant %}
+          <div class="small">{{ row.approved_tenant.tenant_code }}</div>
+          {% endif %}
+        </td>
+        <td>
+          {% if row.status == 'requested' %}
+          <form method="post" action="{% url 'demo-request-review' row.id %}">
+            {% csrf_token %}
+            <select name="action" style="margin-bottom:6px;">
+              <option value="approve">Approve</option>
+              <option value="reject">Reject</option>
+            </select>
+            <select name="module_type" style="margin-bottom:6px;">
+              <option value="">Use requested product</option>
+              <option value="staylux">StayLux</option>
+              <option value="drivesphere">DriveSphere</option>
+              <option value="laundrex">Laundrex</option>
+            </select>
+            <textarea name="review_notes" rows="2" placeholder="Optional review notes"></textarea>
+            <button class="btn btn-primary" type="submit" style="width:auto;margin-top:6px;">Submit</button>
+          </form>
+          {% elif row.status == 'approved' and row.approved_tenant.is_demo %}
+          <form method="post" action="{% url 'demo-request-convert-to-paid' row.id %}">
+            {% csrf_token %}
+            <button class="btn btn-primary" type="submit" style="width:auto;" onclick="return confirm('Convert this demo tenant to paid production?');">Convert to Paid</button>
+          </form>
+          <div class="small" style="margin-top:6px;">Enables production billing and live operations.</div>
+          {% elif row.approved_tenant.demo_converted_to_paid_at %}
+          <span class="badge success">Converted to Paid</span>
+          <div class="small">{{ row.approved_tenant.demo_converted_to_paid_at|date:"M j, Y H:i" }}</div>
+          {% else %}
+          <div class="small">{{ row.review_notes|default:"-" }}</div>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">No demo requests found.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Tenant Structure{% endblock %}
+{% block page_content %}
+{% if messages %}
+  {% for message in messages %}
+    <p class="small" style="color:#166534;background:#dcfce7;padding:10px 12px;border-radius:10px;">{{ message }}</p>
+  {% endfor %}
+{% endif %}
+
+<section class="card" style="margin-bottom:14px;">
+  <div class="row" style="margin-bottom:12px;">
+    <h2 class="section-title" style="margin:0;">{{ tenant.name }} | Branches & Units</h2>
+    <a class="btn btn-soft" href="{% url 'tenant-list' %}">Back</a>
+  </div>
+  <p class="small">Manage hierarchy: Tenant -> Branch -> Unit.</p>
+</section>
+
+<section class="grid-2">
+  <article class="card">
+    <h2 class="section-title">Create Branch</h2>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="form_type" value="branch" />
+      {{ branch_form.as_p }}
+      <button class="btn btn-primary" style="width:auto;" type="submit">Add Branch</button>
+    </form>
+  </article>
+  <article class="card">
+    <h2 class="section-title">Create Unit</h2>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="form_type" value="unit" />
+      {{ unit_form.as_p }}
+      <button class="btn btn-primary" style="width:auto;" type="submit">Add Unit</button>
+    </form>
+  </article>
+</section>
+
+<section class="grid-2" style="margin-top:14px;">
+  <article class="card">
+    <h2 class="section-title">Branches</h2>
+    <table class="list">
+      <thead><tr><th>Code</th><th>Name</th><th>City</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for b in branches %}
+        <tr>
+          <td>{{ b.code }}</td>
+          <td>{{ b.name }}</td>
+          <td>{{ b.city|default:"-" }}</td>
+          <td><span class="badge {% if b.status == 'active' %}success{% else %}off{% endif %}">{{ b.get_status_display }}</span></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4">No branches yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </article>
+  <article class="card">
+    <h2 class="section-title">Units</h2>
+    <table class="list">
+      <thead><tr><th>Branch</th><th>Code</th><th>Name</th><th>Type</th><th>Capacity</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for u in units %}
+        <tr>
+          <td>{{ u.branch.name }}</td>
+          <td>{{ u.code }}</td>
+          <td>{{ u.name }}</td>
+          <td>{{ u.unit_type|default:"-" }}</td>
+          <td>{{ u.capacity }}</td>
+          <td><span class="badge {% if u.status == 'active' %}success{% elif u.status == 'maintenance' %}pending{% else %}off{% endif %}">{{ u.get_status_display }}</span></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No units yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </article>
+</section>
+{% endblock %}

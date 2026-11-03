@@ -1,0 +1,198 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Analytics{% endblock %}
+{% block page_content %}
+<section class="card">
+  <div class="row">
+    <h2 class="section-title" style="margin:0;">Analytics Filters</h2>
+    <div class="row" style="gap:8px;">
+      <span id="healthStatusBadge" class="badge off">Health: unknown</span>
+      <a id="exportCsvLink" class="btn btn-soft" style="width:auto;" href="/ops/api/analytics/export.csv">Export CSV</a>
+      <button id="applyFilters" class="btn btn-primary" style="width:auto;">Apply</button>
+    </div>
+  </div>
+  <div class="filters" style="margin-top:10px;">
+    <input id="startDate" type="date" />
+    <input id="endDate" type="date" />
+    <input id="tenantId" type="number" min="1" placeholder="Tenant ID (optional)" />
+    <div class="small">Use empty tenant for all accessible tenants</div>
+  </div>
+</section>
+
+<section class="kpis" style="margin-top:14px;">
+  <article class="card kpi"><div class="label">Gross</div><div class="value" id="kpiGross">0</div></article>
+  <article class="card kpi"><div class="label">Commission</div><div class="value" id="kpiCommission">0</div></article>
+  <article class="card kpi"><div class="label">Net</div><div class="value" id="kpiNet">0</div></article>
+  <article class="card kpi"><div class="label">Transactions</div><div class="value" id="kpiTxCount">0</div></article>
+</section>
+
+<section class="kpis" style="margin-top:14px;">
+  <article class="card kpi"><div class="label">Connector Success (24h)</div><div class="value" id="connectorSuccessCount">0</div></article>
+  <article class="card kpi"><div class="label">Connector Failures (24h)</div><div class="value" id="connectorFailureCount">0</div></article>
+  <article class="card kpi"><div class="label">Connector Success %</div><div class="value" id="connectorSuccessRatePct">0</div></article>
+  <article class="card kpi"><div class="label">Notification Failures (24h)</div><div class="value" id="notificationFailedCount">0</div></article>
+</section>
+
+<section class="grid-2" style="margin-top:14px;">
+  <article class="card">
+    <h2 class="section-title">Refunds & Payouts</h2>
+    <table class="list">
+      <tbody>
+        <tr><td>Refund Amount</td><td id="refundAmount">0</td></tr>
+        <tr><td>Refund Count</td><td id="refundCount">0</td></tr>
+        <tr><td>Payout Total</td><td id="payoutTotal">0</td></tr>
+        <tr><td>Settlement Count</td><td id="settlementCount">0</td></tr>
+        <tr><td>Marketplace Enabled Modules</td><td id="marketplaceEnabledModules">0</td></tr>
+        <tr><td>Marketplace In Grace</td><td id="marketplaceInGraceModules">0</td></tr>
+        <tr><td>Marketplace Commission Active</td><td id="marketplaceCommissionActiveModules">0</td></tr>
+        <tr><td>Wallet Available Total</td><td id="walletAvailableTotal">0</td></tr>
+        <tr><td>Wallet Pending Total</td><td id="walletPendingTotal">0</td></tr>
+        <tr><td>Withdrawals Requested</td><td id="withdrawalRequestedCount">0</td></tr>
+        <tr><td>Withdrawals Approved</td><td id="withdrawalApprovedCount">0</td></tr>
+        <tr><td>Withdrawals Paid</td><td id="withdrawalPaidCount">0</td></tr>
+        <tr><td>Occupancy Total Units</td><td id="occupancyTotalUnits">0</td></tr>
+        <tr><td>Occupancy Occupied Units</td><td id="occupancyOccupiedUnits">0</td></tr>
+        <tr><td>Occupancy Rate %</td><td id="occupancyRatePct">0</td></tr>
+        <tr><td>Utilization Total Capacity</td><td id="utilizationTotalCapacity">0</td></tr>
+        <tr><td>Utilization Used Capacity</td><td id="utilizationUsedCapacity">0</td></tr>
+        <tr><td>Utilization Rate %</td><td id="utilizationRatePct">0</td></tr>
+        <tr><td>Occupancy Snapshot Days</td><td id="occupancySnapshotDays">0</td></tr>
+        <tr><td>Stay Revenue Total</td><td id="stayRevenueTotal">0</td></tr>
+        <tr><td>Stay Original Revenue</td><td id="stayOriginalRevenue">0</td></tr>
+        <tr><td>Stay Extension Revenue</td><td id="stayExtensionRevenue">0</td></tr>
+        <tr><td>Stay Extension Count</td><td id="stayExtensionCount">0</td></tr>
+      </tbody>
+    </table>
+    <h2 class="section-title" style="margin-top:14px;">Disputes</h2>
+    <table class="list">
+      <thead><tr><th>Status</th><th>Count</th></tr></thead>
+      <tbody id="disputesBody"></tbody>
+    </table>
+  </article>
+  <article class="card">
+    <h2 class="section-title">Top Tenants by Gross</h2>
+    <table class="list">
+      <thead><tr><th>Tenant</th><th>Gross</th><th>Tx</th></tr></thead>
+      <tbody id="topTenantsBody"></tbody>
+    </table>
+  </article>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Daily Revenue (latest 60 points)</h2>
+  <table class="list">
+    <thead><tr><th>Date</th><th>Gross</th><th>Commission</th><th>Net</th></tr></thead>
+    <tbody id="dailyRevenueBody"></tbody>
+  </table>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Connector Failure Trend (hourly, 24h)</h2>
+  <table class="list">
+    <thead><tr><th>Hour</th><th>Failures</th></tr></thead>
+    <tbody id="connectorFailuresTrendBody"></tbody>
+  </table>
+</section>
+
+<script>
+  async function loadAnalytics() {
+    const start = document.getElementById('startDate').value;
+    const end = document.getElementById('endDate').value;
+    const tenantId = document.getElementById('tenantId').value;
+    const moduleId = new URLSearchParams(window.location.search).get('module_id');
+    const params = new URLSearchParams();
+    if (start) params.set('start', start);
+    if (end) params.set('end', end);
+    if (tenantId) params.set('tenant_id', tenantId);
+    if (moduleId) params.set('module_id', moduleId);
+    document.getElementById('exportCsvLink').href = `/ops/api/analytics/export.csv?${params.toString()}`;
+
+    const healthBadge = document.getElementById('healthStatusBadge');
+    const healthRes = await fetch(`/ops/api/health/summary/?${params.toString()}`);
+    if (healthRes.ok) {
+      const healthData = await healthRes.json();
+      const status = (healthData.status || 'unknown').toLowerCase();
+      healthBadge.className = 'badge off';
+      if (status === 'healthy') healthBadge.className = 'badge success';
+      if (status === 'warning') healthBadge.className = 'badge attention';
+      if (status === 'critical') healthBadge.className = 'badge danger';
+      healthBadge.textContent = `Health: ${status}`;
+    } else {
+      healthBadge.className = 'badge off';
+      healthBadge.textContent = 'Health: unavailable';
+    }
+
+    const res = await fetch(`/ops/api/analytics/metrics/?${params.toString()}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const t = data.totals || {};
+    document.getElementById('kpiGross').textContent = t.gross || '0';
+    document.getElementById('kpiCommission').textContent = t.commission || '0';
+    document.getElementById('kpiNet').textContent = t.net || '0';
+    document.getElementById('kpiTxCount').textContent = t.tx_count || 0;
+    document.getElementById('refundAmount').textContent = t.refund_amount || '0';
+    document.getElementById('refundCount').textContent = t.refund_count || 0;
+    document.getElementById('payoutTotal').textContent = t.payout_total || '0';
+    document.getElementById('settlementCount').textContent = t.settlement_count || 0;
+    document.getElementById('marketplaceEnabledModules').textContent = t.marketplace_enabled_modules || 0;
+    document.getElementById('marketplaceInGraceModules').textContent = t.marketplace_in_grace_modules || 0;
+    document.getElementById('marketplaceCommissionActiveModules').textContent = t.marketplace_commission_active_modules || 0;
+    document.getElementById('walletAvailableTotal').textContent = t.wallet_available_total || '0';
+    document.getElementById('walletPendingTotal').textContent = t.wallet_pending_total || '0';
+    document.getElementById('withdrawalRequestedCount').textContent = t.withdrawal_requested_count || 0;
+    document.getElementById('withdrawalApprovedCount').textContent = t.withdrawal_approved_count || 0;
+    document.getElementById('withdrawalPaidCount').textContent = t.withdrawal_paid_count || 0;
+    document.getElementById('occupancyTotalUnits').textContent = t.occupancy_total_units || 0;
+    document.getElementById('occupancyOccupiedUnits').textContent = t.occupancy_occupied_units || 0;
+    document.getElementById('occupancyRatePct').textContent = t.occupancy_rate_pct || 0;
+    document.getElementById('utilizationTotalCapacity').textContent = t.utilization_total_capacity || 0;
+    document.getElementById('utilizationUsedCapacity').textContent = t.utilization_used_capacity || 0;
+    document.getElementById('utilizationRatePct').textContent = t.utilization_rate_pct || 0;
+    document.getElementById('occupancySnapshotDays').textContent = t.occupancy_snapshot_days || 0;
+    document.getElementById('stayRevenueTotal').textContent = t.stay_revenue_total || '0';
+    document.getElementById('stayOriginalRevenue').textContent = t.stay_original_revenue || '0';
+    document.getElementById('stayExtensionRevenue').textContent = t.stay_extension_revenue || '0';
+    document.getElementById('stayExtensionCount').textContent = t.stay_extension_count || 0;
+
+    const disputesBody = document.getElementById('disputesBody');
+    disputesBody.innerHTML = '';
+    (data.disputes || []).forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${row.status}</td><td>${row.count}</td>`;
+      disputesBody.appendChild(tr);
+    });
+
+    const topTenantsBody = document.getElementById('topTenantsBody');
+    topTenantsBody.innerHTML = '';
+    (data.top_tenants || []).forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${row.tenant_name}</td><td>${row.gross}</td><td>${row.tx_count}</td>`;
+      topTenantsBody.appendChild(tr);
+    });
+
+    const dailyRevenueBody = document.getElementById('dailyRevenueBody');
+    dailyRevenueBody.innerHTML = '';
+    (data.daily_revenue || []).forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${row.date}</td><td>${row.gross}</td><td>${row.commission}</td><td>${row.net}</td>`;
+      dailyRevenueBody.appendChild(tr);
+    });
+
+    const h = data.health || {};
+    document.getElementById('connectorSuccessCount').textContent = h.connector_success_count || 0;
+    document.getElementById('connectorFailureCount').textContent = h.connector_failure_count || 0;
+    document.getElementById('connectorSuccessRatePct').textContent = h.connector_success_rate_pct || 0;
+    document.getElementById('notificationFailedCount').textContent = h.notification_failed_count || 0;
+
+    const connectorFailuresTrendBody = document.getElementById('connectorFailuresTrendBody');
+    connectorFailuresTrendBody.innerHTML = '';
+    (h.connector_failures_trend || []).forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${row.hour}</td><td>${row.count}</td>`;
+      connectorFailuresTrendBody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('applyFilters').addEventListener('click', loadAnalytics);
+  loadAnalytics();
+</script>
+{% endblock %}

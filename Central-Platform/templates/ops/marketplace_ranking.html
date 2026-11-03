@@ -1,0 +1,44 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Marketplace Ranking{% endblock %}
+{% block page_content %}
+<section class="card">
+  <h2 class="section-title">Marketplace Ranking</h2>
+  <p class="small">Score = rating (50%) + price (35%) + plan boost (15%) + manual boost.</p>
+  <div style="overflow:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Tenant</th>
+          <th>Module</th>
+          <th>Price</th>
+          <th>Rating</th>
+          <th>Ratings</th>
+          <th>Plan Boost</th>
+          <th>Manual Boost</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rankings %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ row.tenant_name }} <span class="small">({{ row.tenant_code }})</span></td>
+          <td>{{ row.module_name }}</td>
+          <td>{{ row.base_price }}</td>
+          <td>{{ row.average_rating }}</td>
+          <td>{{ row.rating_count }}</td>
+          <td>{{ row.plan_level_boost }}</td>
+          <td>{{ row.manual_boost }}</td>
+          <td><b>{{ row.score }}</b></td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9">No active marketplace listing data found. Add `MarketplaceListing` rows from admin.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

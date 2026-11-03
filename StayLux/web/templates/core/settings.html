@@ -1,0 +1,986 @@
+{% extends "base.html" %}
+{% load i18n text_helpers %}
+{% get_current_language as LANGUAGE_CODE %}
+{% block title %}{% trans "StayLux — Settings" %}{% endblock %}
+{% block page_title %}{% trans "Settings" %}{% endblock %}
+
+{% block content %}
+  <div class="slx-hero">
+    <div class="slx-hero-title">{% trans "Settings" %}</div>
+    <div class="slx-hero-sub">{% trans "Property configuration and system preferences." %}</div>
+  </div>
+
+  <div class="row g-3 mt-2">
+    <div class="col-12">
+      <div class="slx-card">
+        <div class="slx-settings-nav">
+          <div class="slx-settings-tabs" aria-label="{% trans 'Settings sections' %}">
+            <button type="button" class="btn btn-sm slx-tab-btn {% if active_panel == "property" %}active{% endif %}" data-tab="tab-property">{% trans "Property" %}</button>
+            <button type="button" class="btn btn-sm slx-tab-btn {% if active_panel == "employees" %}active{% endif %}" data-tab="tab-employees">{% trans "Employees" %}</button>
+            <button type="button" class="btn btn-sm slx-tab-btn {% if active_panel == "owners" %}active{% endif %}" data-tab="tab-owners">{% trans "Owners" %}</button>
+            <button type="button" class="btn btn-sm slx-tab-btn {% if active_panel == "amenities" %}active{% endif %}" data-tab="tab-amenities">{% trans "Amenities" %}</button>
+            <button type="button" class="btn btn-sm slx-tab-btn" data-tab="tab-system">{% trans "System" %}</button>
+            <button type="button" class="btn btn-sm slx-tab-btn" data-tab="tab-notifications">{% trans "Notifications" %}</button>
+            <button type="button" class="btn btn-sm slx-tab-btn" data-tab="tab-sync">{% if LANGUAGE_CODE|slice:":2" == "ar" %}المزامنة{% else %}{% trans "Sync" %}{% endif %}</button>
+            <button type="button" class="btn btn-sm slx-tab-btn" data-tab="tab-database">{% trans "Database" %}</button>
+            <button type="button" class="btn btn-sm slx-tab-btn" data-tab="tab-backup">{% trans "Backup & Restore" %}</button>
+            <button type="button" class="btn btn-sm slx-tab-btn" data-tab="tab-integrations">{% trans "Channel Integrations" %}</button>
+          </div>
+        </div>
+
+        <form method="post" class="row g-3 p-3" enctype="multipart/form-data" id="property-settings-form">
+          {% csrf_token %}
+          <input type="hidden" name="form_kind" value="settings_save">
+
+          <div id="tab-property" class="slx-tab-pane {% if active_panel == "property" %}active{% endif %}">
+            <div class="row g-3 mb-2">
+              <div class="col-12">
+                <div class="slx-card" style="border:1px solid rgba(229,231,235,0.7); box-shadow:none;">
+                  <div class="p-3" style="border-bottom:1px solid rgba(229,231,235,0.7);">
+                    <div class="slx-card-title">{% trans "Properties" %}</div>
+                    <div class="text-muted" style="font-size:12px;">{% trans "Manage multiple properties from one shared system database." %}</div>
+                  </div>
+                  <div class="p-3">
+                    {% if all_properties %}
+                      <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-2">
+                          <thead>
+                            <tr>
+                              <th>{% trans "Name" %}</th>
+                              <th>{% trans "Business Mode" %}</th>
+                              <th>{% trans "Currency" %}</th>
+                              <th>{% trans "Status" %}</th>
+                              <th>{% trans "Action" %}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for p_item in all_properties %}
+                              <tr>
+                                <td>{{ p_item.name_en }}{% if p_item.name_ar %}<br><small class="text-muted">{{ p_item.name_ar }}</small>{% endif %}</td>
+                                <td>{{ p_item.get_business_type_display }}</td>
+                                <td>{{ p_item.currency }}</td>
+                                <td>{% if p_item.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}</td>
+                                <td>
+                                  {% if prop and prop.id == p_item.id %}
+                                    <span class="badge text-bg-primary">{% trans "Current" %}</span>
+                                  {% elif can_manage_properties %}
+                                    <a
+                                      class="btn btn-sm"
+                                      style="border-radius:10px; border:1px solid rgba(229,231,235,0.9); background:#fff;"
+                                      href="{% url 'switch_active_property' %}?property_id={{ p_item.id }}&next=/settings/?panel=property"
+                                    >{% trans "Switch" %}</a>
+                                  {% else %}
+                                    <span class="text-muted">-</span>
+                                  {% endif %}
+                                  {% if p_item.can_edit_delete %}
+                                    <span class="slx-property-actions">
+                                      <a class="btn btn-sm slx-property-edit" href="{% url 'property_edit' p_item.id %}">{% trans "Edit" %}</a>
+                                      <a class="btn btn-sm slx-property-delete" href="{% url 'property_delete' p_item.id %}">{% trans "Delete" %}</a>
+                                    </span>
+                                  {% endif %}
+                                </td>
+                              </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                    {% else %}
+                      <div class="text-muted">{% trans "No properties yet." %}</div>
+                    {% endif %}
+
+                    {% if can_manage_properties %}
+                      <hr class="my-3">
+                      <div class="row g-2">
+                        <div class="col-12 col-md-4">
+                          <label class="slx-label">{% trans "Property Name (EN)" %}</label>
+                          <input type="text" name="create_name_en" id="id_create_name_en" class="form-control">
+                        </div>
+                        <div class="col-12 col-md-4">
+                          <label class="slx-label">{% trans "Property Name (AR) (optional)" %}</label>
+                          <input type="text" name="create_name_ar" class="form-control">
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <label class="slx-label">{% trans "Mode" %}</label>
+                          <select name="create_business_type" class="form-select">
+                            <option value="hotel">{% trans "Hotel" %}</option>
+                            <option value="apartments">{% trans "Apartments" %}</option>
+                          </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <label class="slx-label">{% trans "Currency" %}</label>
+                          <select name="create_currency" class="form-select">
+                            <option value="OMR">OMR</option>
+                            <option value="AED">AED</option>
+                            <option value="SAR">SAR</option>
+                            <option value="KWD">KWD</option>
+                            <option value="BHD">BHD</option>
+                            <option value="QAR">QAR</option>
+                          </select>
+                        </div>
+                        <div class="col-12">
+                          <button id="property-create-btn" class="btn btn-sm" type="button" style="border-radius:12px; border:1px solid #0b2340; background:#0b2340; color:#fff; font-weight:700;">{% trans "Add Property" %}</button>
+                        </div>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="slx-label">{% trans "Hotel / Apartments" %}</label>
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                  {{ form.business_type }}
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.name_ar.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}الاسم (AR){% else %}{% trans "Name ar" %}{% endif %}</label>
+                {{ form.name_ar }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.name_en.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}الاسم (EN){% else %}{% trans "Name en" %}{% endif %}</label>
+                {{ form.name_en }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.logo.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}الشعار{% else %}{% trans "Logo" %}{% endif %}</label>
+                {{ form.logo }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.property_number.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}رقم المنشأة{% else %}{% trans "Property number" %}{% endif %}</label>
+                {{ form.property_number }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.phone.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}الهاتف{% else %}{% trans "Phone" %}{% endif %}</label>
+                {{ form.phone }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.whatsapp.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}واتساب{% else %}{% trans "Whatsapp" %}{% endif %}</label>
+                {{ form.whatsapp }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.email.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}البريد الإلكتروني{% else %}{% trans "Email" %}{% endif %}</label>
+                {{ form.email }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.vat_no.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}الرقم الضريبي{% else %}{% trans "Vat no" %}{% endif %}</label>
+                {{ form.vat_no }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.cr_no.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}رقم السجل التجاري{% else %}{% trans "Cr no" %}{% endif %}</label>
+                {{ form.cr_no }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.country.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}البلد{% else %}{% trans "Country" %}{% endif %}</label>
+                {{ form.country }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.city.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}المدينة{% else %}{% trans "City" %}{% endif %}</label>
+                {{ form.city }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.address_en.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}العنوان (EN){% else %}{% trans "Address en" %}{% endif %}</label>
+                {{ form.address_en }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.address_ar.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}العنوان (AR){% else %}{% trans "Address ar" %}{% endif %}</label>
+                {{ form.address_ar }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.receipt_footer_en.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}تذييل الإيصال (EN){% else %}{% trans "Receipt footer en" %}{% endif %}</label>
+                {{ form.receipt_footer_en }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.receipt_footer_ar.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}تذييل الإيصال (AR){% else %}{% trans "Receipt footer ar" %}{% endif %}</label>
+                {{ form.receipt_footer_ar }}
+              </div>
+            </div>
+            <div class="col-12 mt-2" style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="slx-btn" style="max-width:320px;" type="submit">{% trans "Save" %}</button>
+              <button class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="reset">{% trans "Reset" %}</button>
+            </div>
+          </div>
+
+          <div id="tab-employees" class="slx-tab-pane {% if active_panel == "employees" %}active{% endif %}">
+            <div class="slx-empty">{% trans "Manage employee accounts and access." %}</div>
+            <div class="mt-2">
+              <a class="slx-action" href="{% url 'staff_list' %}">
+                <span class="slx-action-ico">👤</span><span class="slx-action-text">{% trans "Open Employees" %}</span>
+              </a>
+            </div>
+          </div>
+
+          <div id="tab-owners" class="slx-tab-pane {% if active_panel == "owners" %}active{% endif %}">
+            <div class="slx-empty">{% trans "Manage unit owners and assignments." %}</div>
+            <div class="mt-2">
+              <a class="slx-action" href="{% url 'owners_list' %}">
+                <span class="slx-action-ico">🏠</span><span class="slx-action-text">{% trans "Open Owners" %}</span>
+              </a>
+            </div>
+          </div>
+
+          <div id="tab-system" class="slx-tab-pane">
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.currency.id_for_label }}">{{ form.currency.label }}</label>
+                {{ form.currency }}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="slx-label" for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+                {{ form.is_active }}
+              </div>
+            </div>
+            <div class="col-12 mt-2" style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="slx-btn" style="max-width:320px;" type="submit">{% trans "Save" %}</button>
+              <button class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="reset">{% trans "Reset" %}</button>
+            </div>
+          </div>
+        </form>
+
+        <div id="tab-notifications" class="slx-tab-pane">
+          <form method="post" class="row g-3">
+            {% csrf_token %}
+            <input type="hidden" name="form_kind" value="notifications_save">
+
+            <div class="col-12">
+              <div class="slx-card" style="border:1px solid rgba(229,231,235,0.7); box-shadow:none;">
+                <div class="p-3" style="border-bottom:1px solid rgba(229,231,235,0.7);">
+                  <div class="slx-card-title">{% trans "Notification Settings" %}</div>
+                  <div class="text-muted" style="font-size:12px;">{% trans "Configure outgoing notification channels." %}</div>
+                </div>
+                <div class="p-3">
+                  <div class="row g-3">
+                    <div class="col-12 col-md-4" style="display:flex; align-items:center; gap:10px;">
+                      <input class="form-check-input" type="checkbox" id="id_enable_whatsapp" name="enable_whatsapp" {% if notification_setting and notification_setting.enable_whatsapp %}checked{% endif %}>
+                      <label class="slx-label" for="id_enable_whatsapp" style="margin:0;">{% trans "Enable WhatsApp" %}</label>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <label class="slx-label" for="id_default_channel">{% trans "Default channel" %}</label>
+                      <select class="form-select" id="id_default_channel" name="default_channel">
+                        {% for value, label in notification_channels %}
+                          <option value="{{ value }}" {% if notification_setting and notification_setting.default_channel == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <label class="slx-label" for="id_notification_notes">{% trans "Notes" %}</label>
+                      <input class="form-control" type="text" id="id_notification_notes" name="notes" value="{% if notification_setting %}{{ notification_setting.notes }}{% endif %}">
+                    </div>
+                  </div>
+                  <div class="mt-3" style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="slx-btn" style="max-width:320px;" type="submit">{% trans "Save" %}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <div class="slx-card" style="border:1px solid rgba(229,231,235,0.7); box-shadow:none; margin-top:16px;">
+            <div class="p-3" style="border-bottom:1px solid rgba(229,231,235,0.7);">
+              <div class="slx-card-title">{% trans "Outbox Messages" %}</div>
+            </div>
+            <div class="p-3">
+              <form method="get" class="row g-2" style="margin-bottom:12px;">
+                <input type="hidden" name="panel" value="notifications">
+                <div class="col-12 col-md-2">
+                  <label class="slx-label" for="id_filter_status">{% trans "Status" %}</label>
+                  <select class="form-select" id="id_filter_status" name="status">
+                    <option value="">{% trans "All" %}</option>
+                    {% for value, label in notification_statuses %}
+                      <option value="{{ value }}" {% if outbox_filters.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-12 col-md-2">
+                  <label class="slx-label" for="id_filter_channel">{% trans "Channel" %}</label>
+                  <select class="form-select" id="id_filter_channel" name="channel">
+                    <option value="">{% trans "All" %}</option>
+                    {% for value, label in notification_channels %}
+                      <option value="{{ value }}" {% if outbox_filters.channel == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-12 col-md-2">
+                  <label class="slx-label" for="id_filter_event">{% trans "Event" %}</label>
+                  <input class="form-control" type="text" id="id_filter_event" name="event" value="{{ outbox_filters.event }}">
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="slx-label" for="id_filter_q">{% trans "Search" %}</label>
+                  <input class="form-control" type="text" id="id_filter_q" name="q" value="{{ outbox_filters.q }}" placeholder="{% trans "Recipient or message" %}">
+                </div>
+                <div class="col-12 col-md-2" style="display:flex; align-items:flex-end; gap:10px;">
+                  <label class="slx-check" style="margin:0;">
+                    <input type="checkbox" name="unread" value="1" {% if outbox_filters.unread %}checked{% endif %}>
+                    <span>{% trans "Unread only" %}</span>
+                  </label>
+                </div>
+                <div class="col-12" style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <button class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="submit">{% trans "Apply" %}</button>
+                  <a class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" href="{% url 'settings_page' %}?panel=notifications">{% trans "Clear" %}</a>
+                </div>
+              </form>
+
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_kind" value="notifications_mark_read">
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <input type="hidden" name="status" value="{{ outbox_filters.status }}">
+                <input type="hidden" name="channel" value="{{ outbox_filters.channel }}">
+                <input type="hidden" name="event" value="{{ outbox_filters.event }}">
+                <input type="hidden" name="q" value="{{ outbox_filters.q }}">
+                <input type="hidden" name="unread" value="{% if outbox_filters.unread %}1{% endif %}">
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                  <button class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="submit" name="action" value="mark_selected">{% trans "Mark selected as read" %}</button>
+                  <button class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="submit" name="action" value="mark_all">{% trans "Mark all as read" %}</button>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table align-middle slx-table" style="margin:0;">
+                    <thead>
+                      <tr>
+                        <th style="width:44px;"><input class="form-check-input" type="checkbox" id="id_mark_all"></th>
+                        <th>{% trans "Channel" %}</th>
+                        <th>{% trans "Event" %}</th>
+                        <th>{% trans "Recipient" %}</th>
+                        <th>{% trans "Message" %}</th>
+                        <th>{% trans "Status" %}</th>
+                        <th>{% trans "Created" %}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% if outbox_page %}
+                        {% for n in outbox_page.object_list %}
+                          <tr class="{% if not n.is_read %}slx-row-unread{% endif %}">
+                            <td><input class="form-check-input slx-row-check" type="checkbox" name="message_ids" value="{{ n.id }}"></td>
+                            <td>{{ n.get_channel_display }}</td>
+                            <td>{{ n.event_key|human_event_key }}</td>
+                            <td>
+                              {% if n.to_phone %}
+                                {{ n.to_phone }}
+                              {% elif n.to_email %}
+                                {{ n.to_email }}
+                              {% else %}
+                                -
+                              {% endif %}
+                            </td>
+                            <td>{{ n.content|truncatechars:120 }}</td>
+                            <td><span class="slx-status">{{ n.get_status_display }}</span></td>
+                            <td>{{ n.created_at|date:"Y-m-d H:i" }}</td>
+                          </tr>
+                        {% empty %}
+                          <tr>
+                            <td colspan="7" class="text-muted py-4">{% trans "No notification messages yet." %}</td>
+                          </tr>
+                        {% endfor %}
+                      {% else %}
+                        <tr>
+                          <td colspan="7" class="text-muted py-4">{% trans "No notification messages yet." %}</td>
+                        </tr>
+                      {% endif %}
+                    </tbody>
+                  </table>
+                </div>
+              </form>
+
+              {% if outbox_page and outbox_page.paginator.num_pages > 1 %}
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px; gap:10px; flex-wrap:wrap;">
+                  <div class="text-muted" style="font-size:12px;">
+                    {% trans "Page" %} {{ outbox_page.number }} {% trans "of" %} {{ outbox_page.paginator.num_pages }}
+                  </div>
+                  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    {% if outbox_page.has_previous %}
+                      <a class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" href="?panel=notifications&page={{ outbox_page.previous_page_number }}&status={{ outbox_filters.status }}&channel={{ outbox_filters.channel }}&event={{ outbox_filters.event }}&q={{ outbox_filters.q }}{% if outbox_filters.unread %}&unread=1{% endif %}">{% trans "Previous" %}</a>
+                    {% endif %}
+                    {% if outbox_page.has_next %}
+                      <a class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" href="?panel=notifications&page={{ outbox_page.next_page_number }}&status={{ outbox_filters.status }}&channel={{ outbox_filters.channel }}&event={{ outbox_filters.event }}&q={{ outbox_filters.q }}{% if outbox_filters.unread %}&unread=1{% endif %}">{% trans "Next" %}</a>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-amenities" class="slx-tab-pane {% if active_panel == "amenities" %}active{% endif %}">
+          <div class="slx-card" style="border:1px solid rgba(229,231,235,0.7); box-shadow:none; margin-bottom:16px;">
+            <div class="p-3" style="border-bottom:1px solid rgba(229,231,235,0.7);">
+              <div class="slx-card-title">{% trans "Amenity Tier Presets" %}</div>
+              <div class="text-muted" style="font-size:12px;">{% trans "Choose amenities for each tier. Settings apply to the active business mode." %}</div>
+            </div>
+
+            <div class="p-3">
+              {% for t in tier_tabs %}
+                <details id="tier-{{ t.name|lower }}" class="slx-tier-dropdown" {% if request.GET.tier == t.name|lower %}open{% endif %}>
+                  <summary>{{ t.display_name }}</summary>
+                  <div class="p-3">
+                    <div class="slx-card-title mb-3">{% trans "Amenity List" %}</div>
+                    <ul class="list-group mb-3">
+                      {% for a in t.selected_amenities %}
+                        <li class="list-group-item d-flex align-items-center justify-content-between gap-3">
+                          <span>{{ a }}{% if not a.is_active %} <span class="text-muted">({% trans "Inactive" %})</span>{% endif %}</span>
+                          <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_kind" value="tier_amenity_remove">
+                            <input type="hidden" name="mode_key" value="{{ prop.business_type }}">
+                            <input type="hidden" name="tier_name" value="{{ t.name }}">
+                            <input type="hidden" name="amenity_id" value="{{ a.id }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Remove" %}</button>
+                          </form>
+                        </li>
+                      {% empty %}
+                        <li class="list-group-item text-muted">{% trans "No amenities saved for this tier yet." %}</li>
+                      {% endfor %}
+                    </ul>
+                    {% if t.available_amenities %}
+                      <form method="post" class="row g-2 align-items-end">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_kind" value="tier_amenity_add">
+                        <input type="hidden" name="mode_key" value="{{ prop.business_type }}">
+                        <input type="hidden" name="tier_name" value="{{ t.name }}">
+                        <div class="col-12 col-md-9">
+                          <label class="slx-label" for="tier-amenity-{{ t.name|lower }}">{% trans "Add Amenity" %}</label>
+                          <select class="form-select" name="amenity_id" id="tier-amenity-{{ t.name|lower }}" required>
+                            <option value="">{% trans "Select an amenity" %}</option>
+                            {% for a in t.available_amenities %}
+                              <option value="{{ a.id }}">{{ a }}</option>
+                            {% endfor %}
+                          </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <button type="submit" class="slx-btn">{% trans "Save to Tier" %}</button>
+                        </div>
+                      </form>
+                    {% else %}
+                      <p class="text-muted mb-0">{% trans "No more active amenities available. Add new amenities in the list below." %}</p>
+                    {% endif %}
+                  </div>
+                </details>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="slx-card" style="border:1px solid rgba(229,231,235,0.7); box-shadow:none;">
+            <div class="p-3" style="border-bottom:1px solid rgba(229,231,235,0.7);">
+              <div class="slx-card-title">{% trans "Amenity List" %}</div>
+            </div>
+
+            <div class="p-3">
+              {% if not prop %}
+                <div class="alert alert-warning" role="alert">{% trans "Create a property in the Property tab before adding amenities." %}</div>
+              {% endif %}
+              <form method="post" action="{% url 'settings_page' %}?panel=amenities" class="row g-2" id="amenity-add-form">
+                {% csrf_token %}
+                <input type="hidden" name="form_kind" value="amenity_add">
+                {{ amenity_form.errors }}
+                <div class="col-12 col-md-4">
+                  <label class="slx-label" for="{{ amenity_form.name_en.id_for_label }}">{% trans "Amenity (EN)" %}</label>
+                  {{ amenity_form.name_en }}
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="slx-label" for="{{ amenity_form.name_ar.id_for_label }}">{% trans "Amenity (AR)" %}</label>
+                  {{ amenity_form.name_ar }}
+                </div>
+                <div class="col-12 col-md-2" style="display:flex; align-items:center; gap:8px;">
+                  {{ amenity_form.is_active }}
+                  <label class="slx-label" for="{{ amenity_form.is_active.id_for_label }}" style="margin:0;">{% trans "Active" %}</label>
+                </div>
+                <div class="col-12 col-md-2" style="display:flex; align-items:flex-end;">
+                  <button class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="submit">{% trans "Add" %}</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table align-middle slx-table" style="margin:0;">
+                <thead>
+                  <tr>
+                    <th>{% trans "Name (EN)" %}</th>
+                    <th>{% trans "Name (AR)" %}</th>
+                    <th>{% trans "Active" %}</th>
+                    <th class="text-end">{% trans "Actions" %}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for a in amenities %}
+                    <tr>
+                      <td>
+                        <form method="post" id="amenity-form-{{ a.id }}">
+                          {% csrf_token %}
+                          <input type="hidden" name="form_kind" value="amenity_update">
+                          <input type="hidden" name="amenity_id" value="{{ a.id }}">
+                        </form>
+                        <input class="form-control" type="text" name="name_en" value="{{ a.name_en }}" form="amenity-form-{{ a.id }}" />
+                      </td>
+                      <td>
+                        <input class="form-control" type="text" name="name_ar" value="{{ a.name_ar }}" lang="ar" dir="rtl" form="amenity-form-{{ a.id }}" />
+                      </td>
+                      <td>
+                        <input class="form-check-input" type="checkbox" name="is_active" value="true" form="amenity-form-{{ a.id }}" {% if a.is_active %}checked{% endif %}>
+                      </td>
+                      <td class="text-end" style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="submit" form="amenity-form-{{ a.id }}">{% trans "Save" %}</button>
+                        <form method="post" style="margin:0; display:inline;">
+                          {% csrf_token %}
+                          <input type="hidden" name="form_kind" value="amenity_delete">
+                          <input type="hidden" name="amenity_id" value="{{ a.id }}">
+                          <button class="btn btn-sm" style="font-weight:900; border-radius:12px; border:1px solid rgba(254,202,202,0.9); background:rgba(254,226,226,0.8); color:#991b1b;" type="submit">{% trans "Delete" %}</button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="4" class="text-muted py-4">{% trans "No amenities yet." %}</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="mt-3" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="submit" form="amenity-add-form">{% trans "Add Amenity" %}</button>
+          </div>
+        </div>
+
+        <div id="tab-sync" class="slx-tab-pane">
+          <form method="post" class="row g-3">
+            {% csrf_token %}
+            <input type="hidden" name="form_kind" value="sync_settings">
+
+            <div class="col-12">
+              <div class="slx-card" style="border:1px solid rgba(229,231,235,0.7); box-shadow:none;">
+                <div class="p-3" style="border-bottom:1px solid rgba(229,231,235,0.7);">
+                  <div class="slx-card-title">{% if LANGUAGE_CODE|slice:":2" == "ar" %}إعدادات المزامنة{% else %}{% trans "Sync Configuration" %}{% endif %}</div>
+                  <div class="text-muted" style="font-size:12px;">{% if LANGUAGE_CODE|slice:":2" == "ar" %}ضبط سلوك مزامنة تطبيق سطح المكتب بين وضع الاتصال وعدم الاتصال.{% else %}{% trans "Configure desktop online/offline sync behavior." %}{% endif %}</div>
+                </div>
+                <div class="p-3">
+                  <div class="row g-3">
+                    <div class="col-12 col-md-3" style="display:flex; align-items:center; gap:10px;">
+                      <input class="form-check-input" type="checkbox" id="id_sync_enabled" name="enabled" {% if sync_cfg.enabled %}checked{% endif %}>
+                      <label class="slx-label" for="id_sync_enabled" style="margin:0;">{% if LANGUAGE_CODE|slice:":2" == "ar" %}تفعيل المزامنة{% else %}{% trans "Sync Enabled" %}{% endif %}</label>
+                    </div>
+                    <div class="col-12 col-md-3" style="display:flex; align-items:center; gap:10px;">
+                      <input class="form-check-input" type="checkbox" id="id_sync_push_enabled" name="push_enabled" {% if sync_cfg.push_enabled %}checked{% endif %}>
+                      <label class="slx-label" for="id_sync_push_enabled" style="margin:0;">{% if LANGUAGE_CODE|slice:":2" == "ar" %}تفعيل الدفع{% else %}{% trans "Push Enabled" %}{% endif %}</label>
+                    </div>
+                    <div class="col-12 col-md-3" style="display:flex; align-items:center; gap:10px;">
+                      <input class="form-check-input" type="checkbox" id="id_sync_pull_enabled" name="pull_enabled" {% if sync_cfg.pull_enabled %}checked{% endif %}>
+                      <label class="slx-label" for="id_sync_pull_enabled" style="margin:0;">{% if LANGUAGE_CODE|slice:":2" == "ar" %}تفعيل السحب{% else %}{% trans "Pull Enabled" %}{% endif %}</label>
+                    </div>
+                    <div class="col-12 col-md-3">
+                      <label class="slx-label" for="id_sync_mode">{% if LANGUAGE_CODE|slice:":2" == "ar" %}الوضع{% else %}{% trans "Mode" %}{% endif %}</label>
+                      <select class="form-select" id="id_sync_mode" name="mode">
+                        <option value="auto" {% if sync_cfg.mode == "auto" %}selected{% endif %}>{% if LANGUAGE_CODE|slice:":2" == "ar" %}تلقائي{% else %}{% trans "Auto" %}{% endif %}</option>
+                        <option value="online" {% if sync_cfg.mode == "online" %}selected{% endif %}>{% if LANGUAGE_CODE|slice:":2" == "ar" %}متصل{% else %}{% trans "Online" %}{% endif %}</option>
+                        <option value="offline" {% if sync_cfg.mode == "offline" %}selected{% endif %}>{% if LANGUAGE_CODE|slice:":2" == "ar" %}غير متصل{% else %}{% trans "Offline" %}{% endif %}</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-md-8">
+                      <label class="slx-label" for="id_sync_remote_base_url">{% if LANGUAGE_CODE|slice:":2" == "ar" %}رابط الخادم البعيد{% else %}{% trans "Remote Base URL" %}{% endif %}</label>
+                      <input class="form-control" type="text" id="id_sync_remote_base_url" name="remote_base_url" value="{{ sync_cfg.remote_base_url }}">
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <label class="slx-label" for="id_sync_node_id">{% if LANGUAGE_CODE|slice:":2" == "ar" %}معرف العقدة{% else %}{% trans "Node ID" %}{% endif %}</label>
+                      <input class="form-control" type="text" id="id_sync_node_id" name="node_id" value="{{ sync_cfg.node_id }}">
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <label class="slx-label" for="id_sync_interval">{% if LANGUAGE_CODE|slice:":2" == "ar" %}الفاصل الزمني (ثانية){% else %}{% trans "Interval (seconds)" %}{% endif %}</label>
+                      <input class="form-control" type="number" id="id_sync_interval" name="interval_seconds" min="5" max="3600" value="{{ sync_cfg.interval_seconds }}">
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <label class="slx-label" for="id_sync_retry">{% if LANGUAGE_CODE|slice:":2" == "ar" %}أقصى عدد محاولات إعادة{% else %}{% trans "Max Retry Attempts" %}{% endif %}</label>
+                      <input class="form-control" type="number" id="id_sync_retry" name="max_retry_attempts" min="1" max="100" value="{{ sync_cfg.max_retry_attempts }}">
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <label class="slx-label" for="id_sync_conflict">{% if LANGUAGE_CODE|slice:":2" == "ar" %}سياسة التعارض{% else %}{% trans "Conflict Policy" %}{% endif %}</label>
+                      <select class="form-select" id="id_sync_conflict" name="conflict_policy">
+                        <option value="last_write_wins" {% if sync_cfg.conflict_policy == "last_write_wins" %}selected{% endif %}>{% if LANGUAGE_CODE|slice:":2" == "ar" %}آخر تعديل هو المعتمد{% else %}{% trans "Last Write Wins" %}{% endif %}</option>
+                      </select>
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <label class="slx-label" for="id_sync_api_token">{% if LANGUAGE_CODE|slice:":2" == "ar" %}رمز واجهة البرمجة{% else %}{% trans "API Token" %}{% endif %}</label>
+                      <input class="form-control" type="password" id="id_sync_api_token" name="api_token" value="{{ sync_cfg.api_token }}">
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <label class="slx-label" for="id_sync_secret">{% if LANGUAGE_CODE|slice:":2" == "ar" %}المفتاح المشترك{% else %}{% trans "Shared Secret" %}{% endif %}</label>
+                      <input class="form-control" type="password" id="id_sync_secret" name="shared_secret" value="{{ sync_cfg.shared_secret }}">
+                    </div>
+                  </div>
+                  <div class="mt-3" style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="slx-btn" style="max-width:320px;" type="submit">{% trans "Save" %}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <div class="slx-card" style="border:1px solid rgba(229,231,235,0.7); box-shadow:none; margin-top:16px;">
+            <div class="p-3" style="border-bottom:1px solid rgba(229,231,235,0.7);">
+              <div class="slx-card-title">{% if LANGUAGE_CODE|slice:":2" == "ar" %}حالة المزامنة{% else %}{% trans "Sync Status" %}{% endif %}</div>
+            </div>
+            <div class="p-3">
+              <div class="row g-2">
+                <div class="col-6 col-md-2"><strong>{% if LANGUAGE_CODE|slice:":2" == "ar" %}معلق{% else %}{% trans "Pending" %}{% endif %}:</strong> {{ sync_queue.pending|default:0 }}</div>
+                <div class="col-6 col-md-2"><strong>{% if LANGUAGE_CODE|slice:":2" == "ar" %}فاشل{% else %}{% trans "Failed" %}{% endif %}:</strong> {{ sync_queue.failed|default:0 }}</div>
+                <div class="col-6 col-md-2"><strong>{% if LANGUAGE_CODE|slice:":2" == "ar" %}ميت{% else %}{% trans "Dead" %}{% endif %}:</strong> {{ sync_queue.dead_letter|default:0 }}</div>
+                <div class="col-6 col-md-2"><strong>{% if LANGUAGE_CODE|slice:":2" == "ar" %}تمت المزامنة{% else %}{% trans "Synced" %}{% endif %}:</strong> {{ sync_queue.synced|default:0 }}</div>
+                <div class="col-6 col-md-4"><strong>{% if LANGUAGE_CODE|slice:":2" == "ar" %}وارد غير معالج{% else %}{% trans "Inbound Unprocessed" %}{% endif %}:</strong> {{ sync_inbound_unprocessed|default:0 }}</div>
+              </div>
+              <div class="text-muted mt-2" style="font-size:12px;">
+                {% if LANGUAGE_CODE|slice:":2" == "ar" %}آخر دفع{% else %}{% trans "Last Push" %}{% endif %}: {{ sync_cfg.last_success_at|default:"-" }} | {% if LANGUAGE_CODE|slice:":2" == "ar" %}آخر سحب{% else %}{% trans "Last Pull" %}{% endif %}: {{ sync_cfg.last_pull_at|default:"-" }}
+              </div>
+              {% if sync_cfg.last_error %}
+                <div class="text-danger mt-1" style="font-size:12px;">{{ sync_cfg.last_error }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="row g-3" style="margin-top:4px;">
+            <div class="col-12 col-md-4">
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_kind" value="sync_push_now">
+                <button class="btn btn-sm w-100" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="submit">{% if LANGUAGE_CODE|slice:":2" == "ar" %}تشغيل الدفع الآن{% else %}{% trans "Run Push Now" %}{% endif %}</button>
+              </form>
+            </div>
+            <div class="col-12 col-md-4">
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_kind" value="sync_pull_now">
+                <button class="btn btn-sm w-100" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="submit">{% if LANGUAGE_CODE|slice:":2" == "ar" %}تشغيل السحب الآن{% else %}{% trans "Run Pull Now" %}{% endif %}</button>
+              </form>
+            </div>
+            <div class="col-12 col-md-4">
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_kind" value="sync_retry_now">
+                <button class="btn btn-sm w-100" style="border-radius:12px; border:1px solid rgba(254,226,226,0.9); background:rgba(254,242,242,0.8); color:#991b1b;" type="submit">{% if LANGUAGE_CODE|slice:":2" == "ar" %}إعادة محاولة الفاشل / الميت{% else %}{% trans "Retry Failed / Dead" %}{% endif %}</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-database" class="slx-tab-pane">
+          <form method="post" class="row g-3">
+            {% csrf_token %}
+            <input type="hidden" name="form_kind" value="db_settings">
+
+            <div class="col-12">
+              <div class="slx-card" style="border:1px solid rgba(229,231,235,0.7); box-shadow:none;">
+                <div class="p-3" style="border-bottom:1px solid rgba(229,231,235,0.7);">
+                  <div class="slx-card-title">{% if LANGUAGE_CODE|slice:":2" == "ar" %}PostgreSQL / Neon{% else %}{% trans "PostgreSQL / Neon" %}{% endif %}</div>
+                  <div class="text-muted" style="font-size:12px;">
+                    {% if LANGUAGE_CODE|slice:":2" == "ar" %}احفظ بيانات الاتصال، اختبر الاتصال، أو انقل البيانات إلى قاعدة جديدة.{% else %}{% trans "Save credentials, test connection, or migrate data to a new database." %}{% endif %}
+                  </div>
+                </div>
+                <div class="p-3">
+                  <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                      <label class="slx-label" for="{{ db_form.host.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}المضيف{% else %}{{ db_form.host.label }}{% endif %}</label>
+                      {{ db_form.host }}
+                    </div>
+                    <div class="col-12 col-md-3">
+                      <label class="slx-label" for="{{ db_form.port.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}المنفذ{% else %}{{ db_form.port.label }}{% endif %}</label>
+                      {{ db_form.port }}
+                    </div>
+                    <div class="col-12 col-md-3">
+                      <label class="slx-label" for="{{ db_form.sslmode.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}وضع SSL{% else %}{% trans "SSL Mode" %}{% endif %}</label>
+                      {{ db_form.sslmode }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <label class="slx-label" for="{{ db_form.db_name.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}اسم قاعدة البيانات{% else %}{% trans "Database Name" %}{% endif %}</label>
+                      {{ db_form.db_name }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <label class="slx-label" for="{{ db_form.username.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}اسم المستخدم{% else %}{% trans "Username" %}{% endif %}</label>
+                      {{ db_form.username }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <label class="slx-label" for="{{ db_form.password.id_for_label }}">{% if LANGUAGE_CODE|slice:":2" == "ar" %}كلمة المرور{% else %}{% trans "Password" %}{% endif %}</label>
+                      {{ db_form.password }}
+                    </div>
+                  </div>
+
+                  <div class="mt-3" style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="slx-btn" style="max-width:320px;" type="submit" name="action" value="save">{% trans "Save" %}</button>
+                    <button class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="submit" name="action" value="test">{% if LANGUAGE_CODE|slice:":2" == "ar" %}اختبار الاتصال{% else %}{% trans "Test Connection" %}{% endif %}</button>
+                    <button class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="submit" name="action" value="migrate">{% if LANGUAGE_CODE|slice:":2" == "ar" %}ترحيل البيانات{% else %}{% trans "Migrate Data" %}{% endif %}</button>
+                  </div>
+                  <div class="text-muted" style="font-size:12px; margin-top:10px;">
+                    {% if LANGUAGE_CODE|slice:":2" == "ar" %}الترحيل ينسخ قاعدة البيانات الحالية إلى PostgreSQL. أعد تشغيل التطبيق للتبديل بين قواعد البيانات.{% else %}{% trans "Migration copies the current database into PostgreSQL. Restart the app to switch databases." %}{% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div id="tab-backup" class="slx-tab-pane">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="form_kind" value="backup_restore">
+
+            <div class="slx-card" style="border:1px solid rgba(229,231,235,0.7); box-shadow:none; margin-bottom:16px;">
+              <div class="p-3" style="border-bottom:1px solid rgba(229,231,235,0.7);">
+                <div class="slx-card-title">{% trans "Backup" %}</div>
+                <div class="text-muted" style="font-size:12px;">{% trans "Download a backup of the current database." %}</div>
+              </div>
+              <div class="p-3" style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="slx-btn" style="max-width:320px;" type="submit" name="action" value="backup">{% trans "Backup" %}</button>
+              </div>
+            </div>
+
+            <div class="slx-card" style="border:1px solid rgba(229,231,235,0.7); box-shadow:none; margin-bottom:16px;">
+              <div class="p-3" style="border-bottom:1px solid rgba(229,231,235,0.7);">
+                <div class="slx-card-title">{% trans "Restore" %}</div>
+                <div class="text-muted" style="font-size:12px;">{% trans "Upload a backup file to restore the database." %}</div>
+              </div>
+              <div class="p-3">
+                <input class="form-control" type="file" name="restore_file" accept=".json,.sqlite3,.db,.sql">
+                <div class="mt-2">
+                  <button class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="submit" name="action" value="restore">{% trans "Restore" %}</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="slx-card" style="border:1px solid rgba(254,202,202,0.9); box-shadow:none;">
+              <div class="p-3" style="border-bottom:1px solid rgba(254,202,202,0.9);">
+                <div class="slx-card-title" style="color:#991b1b;">{% trans "Reset Data (Danger)" %}</div>
+                <div class="text-muted" style="font-size:12px;">{% trans "Deletes Rooms, Guests, Bookings, Maintenance, Housekeeping, and Reports data for the active business mode." %}</div>
+              </div>
+              <div class="p-3">
+                <div class="row g-2">
+                  <div class="col-12 col-md-6">
+                    <label class="slx-label">{% trans "Type DELETE to confirm" %}</label>
+                    <input class="form-control" type="text" name="confirm_reset" placeholder="{% trans "DELETE" %}">
+                  </div>
+                  <div class="col-12 col-md-6" style="display:flex; gap:10px; align-items:flex-end;">
+                    <button class="btn btn-sm" style="font-weight:900; border-radius:12px; border:1px solid rgba(254,202,202,0.9); background:rgba(254,226,226,0.8); color:#991b1b;" type="submit" name="action" value="reset">{% trans "Reset Data" %}</button>
+                    <button class="btn btn-sm" style="border-radius:12px; border:1px solid rgba(229,231,235,0.9); background:rgba(255,255,255,0.9);" type="reset">{% trans "Reset" %}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3" style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="slx-btn" style="max-width:320px;" type="submit" name="action" value="save">{% trans "Save" %}</button>
+            </div>
+          </form>
+        </div>
+        <div id="tab-integrations" class="slx-tab-pane p-3">
+          <div class="slx-channel-intro">
+            <div class="slx-card-title">{% trans "Channel Integrations" %}</div>
+            <p class="text-muted mb-0">{% trans "Prepare your Agoda, Booking.com and Airbnb property connections. Save property IDs and room mappings for each channel." %}</p>
+          </div>
+          <div class="alert alert-info" role="status">
+            {% trans "Setup only: platform connectors are not available yet. Saving details does not connect an account or sync bookings, rates or availability. API access and platform authorization will be required when connectors are enabled." %}
+          </div>
+          {% if not prop %}<p class="text-muted">{% trans "Create a property before saving channel setup." %}</p>{% endif %}
+          <div class="slx-channel-grid">
+            {% for channel in channel_integrations %}
+              <section class="slx-channel-card">
+                <div class="slx-channel-heading">
+                  <h3>{{ channel.name }}</h3>
+                  <span class="slx-channel-status">{% trans "Not configured" %}</span>
+                </div>
+                <p class="text-muted small">{% trans "Property" %}: {{ prop.name_en|default:"?" }}</p>
+                <form method="post" action="{% url 'channel_integration_save' channel.platform %}">
+                  {% csrf_token %}
+                  <div class="mb-3">
+                    <label class="slx-label" for="{{ channel.form.external_property_id.id_for_label }}">{{ channel.form.external_property_id.label }}</label>
+                    {{ channel.form.external_property_id }}
+                  </div>
+                  <div class="mb-3">
+                    <label class="slx-label" for="{{ channel.form.account_reference.id_for_label }}">{{ channel.form.account_reference.label }}</label>
+                    {{ channel.form.account_reference }}
+                    <div class="text-muted small mt-1">{% trans "Reference only. Do not enter passwords, API keys or access tokens here." %}</div>
+                  </div>
+                  <details class="slx-channel-mapping mb-3">
+                    <summary>{% trans "Room and rate plan mapping" %}</summary>
+                    {% for row in channel.form.unit_rows %}
+                      <div class="slx-channel-unit">
+                        <strong>{{ row.unit.code }}</strong>
+                        <label class="slx-label mt-2" for="{{ row.room.id_for_label }}">{{ row.room.label }}</label>
+                        {{ row.room }}
+                        <label class="slx-label mt-2" for="{{ row.rate.id_for_label }}">{{ row.rate.label }}</label>
+                        {{ row.rate }}
+                      </div>
+                    {% empty %}
+                      <p class="text-muted small p-3">{% trans "Add rooms or units to configure their channel mappings." %}</p>
+                    {% endfor %}
+                  </details>
+                  <details class="slx-channel-mapping mb-3">
+                    <summary>{% trans "API credentials and authorization" %}</summary>
+                    <div class="p-3">
+                      <p class="text-muted small">{% trans "Use only API credentials issued for an approved integration. Platform website login passwords cannot connect StayLux. Fill only the fields supplied for your API access." %}</p>
+                      <label class="slx-label" for="{{ channel.form.authentication_method.id_for_label }}">{% trans "Authentication method" %}</label>
+                      {{ channel.form.authentication_method }}
+                      {% if channel.form.storage_ready %}
+                        {% for field in channel.form.credential_inputs %}
+                          <div class="mt-3"><label class="slx-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+                        {% endfor %}
+                        <p class="text-muted small mt-2">{% trans "Credentials are encrypted. Saved values are never displayed. Leave fields blank to keep existing values." %}</p>
+                      {% else %}
+                        <div class="alert alert-warning mt-3">{% trans "Secure credential entry is not enabled on this server. Contact the administrator to enable encrypted storage before entering API credentials." %}</div>
+                      {% endif %}
+                      {% if channel.form.instance.credentials_encrypted %}
+                        <p class="text-success small mt-3">{% trans "Encrypted credentials saved" %}</p>
+                        <label class="d-flex gap-2 align-items-center">{{ channel.form.clear_credentials }} <span>{{ channel.form.clear_credentials.label }}</span></label>
+                      {% endif %}
+                    </div>
+                  </details>
+                  <div class="d-flex gap-2 flex-wrap">
+                    <button type="submit" class="slx-btn" {% if not prop %}disabled{% endif %}>{% trans "Save Setup" %}</button>
+                    <button type="submit" name="action" value="check_setup" class="btn btn-outline-secondary" {% if not prop %}disabled{% endif %}>{% trans "Check Setup" %}</button>
+                    <button type="button" class="btn btn-outline-secondary" disabled>{% trans "Test Connection" %}</button>
+                  </div>
+                  <div class="text-muted small mt-3">{% trans "Connection testing and synchronization will be available after the platform connector is implemented and approved." %}</div>
+                </form>
+              </section>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="slx-card mt-3">
+        <div class="slx-card-head">
+          <div class="slx-card-title">{% if LANGUAGE_CODE == 'ar' %}حول ومعلومات الاتصال{% else %}{% trans "About & Contact" %}{% endif %}</div>
+          <div class="slx-pill">{% if LANGUAGE_CODE == 'ar' %}معلومات{% else %}{% trans "Info" %}{% endif %}</div>
+        </div>
+
+        <div style="display:grid; gap:8px;">
+          {% if LANGUAGE_CODE == 'ar' %}
+            <div><strong>تم التطوير بواسطة:</strong> Deedarian Software Solutions</div>
+            <div><strong>اتصل:</strong> 📞 +968 72848463</div>
+            <div><strong>واتساب:</strong> 💬 +968 99850826</div>
+          {% else %}
+            <div><strong>Developed by</strong>: Deedarian Software Solutions</div>
+            <div><strong>Contact:</strong> 📞 +968 72848463</div>
+            <div><strong>WhatsApp:</strong> 💬 +968 99850826</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var buttons = document.querySelectorAll(".slx-tab-btn");
+      var panes = document.querySelectorAll(".slx-tab-pane");
+      function activate(tabId) {
+        buttons.forEach(function (b) {
+          b.classList.toggle("active", b.getAttribute("data-tab") === tabId);
+        });
+        panes.forEach(function (p) {
+          p.classList.toggle("active", p.id === tabId);
+        });
+      }
+      buttons.forEach(function (b) {
+        b.addEventListener("click", function () {
+          var tabId = b.getAttribute("data-tab");
+          activate(tabId);
+          var url = new URL(window.location.href);
+          url.searchParams.set("panel", tabId.replace("tab-", ""));
+          window.history.replaceState(null, "", url);
+        });
+      });
+      var params = new URLSearchParams(window.location.search);
+      var panel = ("{{ active_panel|escapejs }}" || params.get("panel") || "property").trim();
+      {% if amenity_form.errors %}panel = "amenities";{% endif %}
+      var initialTab = panel ? "tab-" + panel : "tab-property";
+      if (!document.getElementById(initialTab)) {
+        initialTab = "tab-property";
+      }
+      activate(initialTab);
+    })();
+
+    (function () {
+      var master = document.getElementById("id_mark_all");
+      if (!master) {
+        return;
+      }
+      master.addEventListener("change", function () {
+        var checks = document.querySelectorAll(".slx-row-check");
+        checks.forEach(function (c) {
+          c.checked = master.checked;
+        });
+      });
+    })();
+
+    (function () {
+      var form = document.getElementById("property-settings-form");
+      if (!form) {
+        return;
+      }
+      var kindInput = form.querySelector("input[name='form_kind']");
+      var radios = form.querySelectorAll("input[name='business_type']");
+      radios.forEach(function (r) {
+        r.addEventListener("change", function () {
+          if (kindInput) {
+            kindInput.value = "business_type_switch";
+          }
+          form.submit();
+        });
+      });
+    })();
+
+    (function () {
+      var form = document.getElementById("property-settings-form");
+      var createBtn = document.getElementById("property-create-btn");
+      if (!form || !createBtn) {
+        return;
+      }
+      var kindInput = form.querySelector("input[name='form_kind']");
+      createBtn.addEventListener("click", function () {
+        var nameInput = document.getElementById("id_create_name_en");
+        if (nameInput && !nameInput.value.trim()) {
+          nameInput.focus();
+          return;
+        }
+        if (kindInput) {
+          kindInput.value = "property_create";
+        }
+        form.submit();
+      });
+    })();
+
+  </script>
+
+  <style>
+    .slx-channel-intro { margin-bottom:18px; }
+    .slx-channel-intro .slx-card-title { margin-bottom:6px; }
+    .slx-channel-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:18px; align-items:start; }
+    .slx-channel-card { padding:24px; border:1px solid #e3e9f0; border-radius:18px; background:linear-gradient(180deg,#fff,#fbfcfe); box-shadow:0 6px 22px rgba(11,35,64,.04); }
+    .slx-channel-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:12px; }
+    .slx-channel-heading h3 { margin:0; font-size:19px; font-weight:800; color:#0b2340; }
+    .slx-channel-status { padding:5px 10px; border-radius:20px; color:#805e17; background:#fff5db; border:1px solid #f0dfb0; font-size:11px; font-weight:700; }
+    .slx-channel-mapping { border:1px solid #e3e9f0; border-radius:12px; background:white; }
+    .slx-channel-mapping summary { padding:12px; cursor:pointer; color:#0b2340; font-weight:700; font-size:13px; }
+    .slx-channel-unit { padding:14px; border-top:1px solid #edf0f5; }
+    .slx-channel-card .slx-btn { width:auto; padding:10px 18px; }
+
+    .slx-property-actions { display:inline-flex; gap:8px; margin-inline-start:8px; vertical-align:middle; }
+    .slx-property-actions .btn { display:inline-flex; align-items:center; justify-content:center; min-height:34px; padding:6px 14px; border:1px solid; border-radius:12px; font-weight:900; text-decoration:none; transition:background-color .15s, border-color .15s, box-shadow .15s; }
+    .slx-property-edit { color:#0b2340; border-color:rgba(229,231,235,.9) !important; background:rgba(255,255,255,.9); }
+    .slx-property-edit:hover { color:#0b2340; background:#f3f6fa; border-color:#cbd5e1 !important; box-shadow:0 3px 8px rgba(11,35,64,.08); }
+    .slx-property-delete { color:#991b1b; border-color:rgba(254,202,202,.9) !important; background:rgba(254,226,226,.8); }
+    .slx-property-delete:hover { color:#7f1d1d; background:#fecaca; border-color:#fca5a5 !important; box-shadow:0 3px 8px rgba(153,27,27,.08); }
+    .slx-property-actions .btn:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
+    .slx-settings-nav { padding:20px 22px; border-bottom:1px solid #e8edf3; background:linear-gradient(180deg,#fff,#fcfdff); border-radius:20px 20px 0 0; }
+    .slx-settings-tabs { display:flex; gap:6px; padding:6px; overflow-x:auto; scrollbar-width:thin; scrollbar-color:#cbd5e1 transparent; background:#f2f5f9; border:1px solid #e6ebf2; border-radius:16px; }
+    .slx-settings-tabs .slx-tab-btn { position:relative; flex:1 0 auto; min-height:44px; padding:11px 17px; border:1px solid transparent; border-radius:11px; background:transparent; color:#53647a; font-size:13px; font-weight:700; line-height:1.5; white-space:nowrap; transition:background-color .18s,color .18s,box-shadow .18s,border-color .18s; }
+    .slx-settings-tabs .slx-tab-btn:hover { color:#102c4b; background:#fff; border-color:#e1e7ef; }
+    .slx-settings-tabs .slx-tab-btn.active { color:#fff; background:linear-gradient(135deg,#173957,#0b2340); border-color:#173957; box-shadow:0 3px 9px rgba(11,35,64,.18),inset 0 1px 0 rgba(255,255,255,.1); }
+    .slx-settings-tabs .slx-tab-btn.active::after { content:""; position:absolute; bottom:4px; inset-inline-start:calc(50% - 9px); width:18px; height:2px; border-radius:2px; background:#d4ad59; }
+    .slx-settings-tabs .slx-tab-btn:focus-visible { outline:2px solid #b98f3e; outline-offset:2px; }
+    @media(max-width:640px) { .slx-settings-nav { padding:14px 12px; } .slx-settings-tabs .slx-tab-btn { flex:0 0 auto; padding:10px 15px; } }
+    @media(prefers-reduced-motion:reduce) { .slx-settings-tabs .slx-tab-btn { transition:none; } }
+    .slx-tab-pane { display:none; }
+    .slx-tab-pane.active { display:block; }
+    .slx-tier-dropdown { border:1px solid #e5e7eb; border-radius:12px; margin-bottom:12px; overflow:hidden; }
+    .slx-tier-dropdown > summary { padding:14px 18px; cursor:pointer; font-weight:700; background:#f8fafc; }
+    .slx-tier-dropdown > summary:focus-visible { outline:2px solid #0b2340; outline-offset:-3px; }
+    .slx-tier-dropdown[open] > summary { background:#0b2340; color:#fff; }
+    .slx-tier-dropdown > .row { margin:0; padding:0 12px 12px; }
+    #id_receipt_footer_en, #id_receipt_footer_ar { min-height:120px; }
+    #id_address_en, #id_address_ar { min-height:140px; }
+  </style>
+{% endblock %}

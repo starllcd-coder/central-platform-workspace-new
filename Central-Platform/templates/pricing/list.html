@@ -1,0 +1,200 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Plans & Pricing{% endblock %}
+{% block page_content %}
+{% if messages %}
+  {% for message in messages %}
+    <p class="small" style="color:#166534;background:#dcfce7;padding:10px 12px;border-radius:10px;">{{ message }}</p>
+  {% endfor %}
+{% endif %}
+
+<section class="card">
+  <h2 class="section-title">Plan Versions</h2>
+  <table class="list">
+    <thead><tr><th>Plan</th><th>Version</th><th>Billing</th><th>Onboarding Fee</th><th>Yearly Fee</th><th>Commission</th><th>Effective From</th></tr></thead>
+    <tbody>
+    {% for v in versions %}
+      <tr>
+        <td>{{ v.plan.name }}</td>
+        <td>{{ v.version }}</td>
+        <td>{{ v.plan.get_billing_type_display }}</td>
+        <td>{{ v.onboarding_fee }}</td>
+        <td>{{ v.yearly_fee }}</td>
+        <td>{{ v.commission_rate }}%</td>
+        <td>{{ v.effective_from }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">No pricing versions yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <div class="row" style="margin-bottom:10px;">
+    <h2 class="section-title" style="margin:0;">Commission Rules</h2>
+    {% if is_super_admin or 'commission.manage' in permission_codes %}
+    <a href="{% url 'commission-rule-create' %}" class="btn btn-primary" style="width:auto;">+ New Rule</a>
+    {% endif %}
+  </div>
+  <table class="list">
+    <thead><tr><th>Tenant</th><th>Module</th><th>Booking Type</th><th>Rate</th><th>Fixed Fee</th><th>Effective</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for r in rules %}
+      <tr>
+        <td>{% if r.tenant %}{{ r.tenant.name }}{% else %}Global{% endif %}</td>
+        <td>{% if r.module %}{{ r.module.name }}{% else %}All Modules{% endif %}</td>
+        <td>{{ r.get_booking_type_display }}</td>
+        <td>{{ r.rate_percent }}%</td>
+        <td>{{ r.fixed_fee }}</td>
+        <td>{{ r.effective_from }}{% if r.effective_to %} to {{ r.effective_to }}{% endif %}</td>
+        <td><span class="badge {% if r.is_active %}success{% else %}off{% endif %}">{% if r.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+        <td>
+          {% if is_super_admin or 'commission.manage' in permission_codes %}
+          <a href="{% url 'commission-rule-edit' r.id %}">Edit</a>
+          <form method="post" action="{% url 'commission-rule-toggle' r.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-soft" style="width:auto;padding:5px 10px;margin-left:8px;">{% if r.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+          </form>
+          {% else %}
+          -
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="8">No commission rules yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="small" style="margin-top:12px;">
+    API endpoints:
+    <code>/pricing/api/commission-rules/</code> and
+    <code>/pricing/api/commission-rules/&lt;id&gt;/status/</code>
+  </p>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Optional Add-ons</h2>
+  {% if is_super_admin or 'commission.manage' in permission_codes %}
+  <form method="post" action="{% url 'pricing-add-on-create' %}" class="grid grid-4" style="margin-bottom:12px;">
+    {% csrf_token %}
+    <div><label>Code</label>{{ add_on_form.code }}</div>
+    <div><label>Name</label>{{ add_on_form.name }}</div>
+    <div><label>Billing Cycle</label>{{ add_on_form.billing_cycle }}</div>
+    <div><label>Price</label>{{ add_on_form.price }}</div>
+    <div><label>Description</label>{{ add_on_form.description }}</div>
+    <div><label>Active</label>{{ add_on_form.is_active }}</div>
+    <button class="btn btn-primary" style="width:auto;" type="submit">Create Add-on</button>
+  </form>
+  {% endif %}
+  <table class="list">
+    <thead><tr><th>Code</th><th>Name</th><th>Billing</th><th>Price</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for a in add_ons %}
+      <tr>
+        <td>{{ a.code }}</td>
+        <td>{{ a.name }}</td>
+        <td>{{ a.get_billing_cycle_display }}</td>
+        <td>{{ a.price }}</td>
+        <td><span class="badge {% if a.is_active %}success{% else %}off{% endif %}">{% if a.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">No add-ons yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Tenant Add-on Subscriptions</h2>
+  {% if is_super_admin or 'commission.manage' in permission_codes %}
+  <form method="post" action="{% url 'pricing-tenant-add-on-subscribe' %}" class="grid grid-4" style="margin-bottom:12px;">
+    {% csrf_token %}
+    <div><label>Tenant</label>{{ tenant_add_on_form.tenant }}</div>
+    <div><label>Add-on</label>{{ tenant_add_on_form.add_on }}</div>
+    <div><label>Status</label>{{ tenant_add_on_form.status }}</div>
+    <div><label>Start Date</label>{{ tenant_add_on_form.start_date }}</div>
+    <div><label>End Date</label>{{ tenant_add_on_form.end_date }}</div>
+    <div><label>Notes</label>{{ tenant_add_on_form.notes }}</div>
+    <button class="btn btn-primary" style="width:auto;" type="submit">Assign Add-on</button>
+  </form>
+  {% endif %}
+  <table class="list">
+    <thead><tr><th>Tenant</th><th>Add-on</th><th>Status</th><th>Start</th><th>End</th></tr></thead>
+    <tbody>
+    {% for s in tenant_add_ons %}
+      <tr>
+        <td>{{ s.tenant.name }}</td>
+        <td>{{ s.add_on.name }}</td>
+        <td>{{ s.get_status_display }}</td>
+        <td>{{ s.start_date }}</td>
+        <td>{{ s.end_date|default:"-" }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">No tenant add-on subscriptions yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="small" style="margin-top:12px;">
+    API endpoints:
+    <code>/pricing/api/add-ons/</code> and
+    <code>/pricing/api/tenant-add-ons/</code>
+  </p>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Pricing Transition Queue</h2>
+  {% if is_super_admin or 'commission.manage' in permission_codes %}
+  <form method="post" action="{% url 'pricing-transition-create' %}" class="grid grid-4" style="margin-bottom:12px;">
+    {% csrf_token %}
+    <div>
+      <label>Tenant</label>
+      {{ transition_form.tenant }}
+    </div>
+    <div>
+      <label>Target Plan Version</label>
+      {{ transition_form.target_plan_version }}
+    </div>
+    <div>
+      <label>Effective On</label>
+      {{ transition_form.effective_on }}
+    </div>
+    <div>
+      <label>Notes</label>
+      {{ transition_form.notes }}
+    </div>
+    <button class="btn btn-primary" style="width:auto;" type="submit">Schedule Transition</button>
+  </form>
+  {% endif %}
+  <table class="list">
+    <thead><tr><th>Tenant</th><th>Target Plan</th><th>Effective On</th><th>Status</th><th>Failure</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for t in transitions %}
+      <tr>
+        <td>{{ t.tenant.name }}</td>
+        <td>{{ t.target_plan_version.plan.name }} {{ t.target_plan_version.version }}</td>
+        <td>{{ t.effective_on }}</td>
+        <td><span class="badge {% if t.status == 'applied' %}success{% elif t.status == 'failed' %}attention{% else %}pending{% endif %}">{{ t.get_status_display }}</span></td>
+        <td>{{ t.failure_reason|default:"-" }}</td>
+        <td>
+          {% if t.status == 'scheduled' and (is_super_admin or 'commission.manage' in permission_codes) %}
+          <form method="post" action="{% url 'pricing-transition-apply' t.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-soft" style="width:auto;padding:5px 10px;">Apply</button>
+          </form>
+          {% else %}
+          -
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">No pricing transitions scheduled yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="small" style="margin-top:12px;">
+    API endpoints:
+    <code>/pricing/api/transitions/</code> and
+    <code>/pricing/api/transitions/&lt;id&gt;/apply/</code>
+  </p>
+</section>
+{% endblock %}

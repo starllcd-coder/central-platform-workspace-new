@@ -1,0 +1,197 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Disputes{% endblock %}
+{% block page_content %}
+{% if messages %}
+  {% for message in messages %}
+    <p class="small" style="color:#166534;background:#dcfce7;padding:10px 12px;border-radius:10px;">{{ message }}</p>
+  {% endfor %}
+{% endif %}
+
+<section class="grid-2">
+  <article class="card">
+    <h2 class="section-title">Open New Dispute</h2>
+    <form method="post" action="{% url 'billing-dispute-create' %}">
+      {% csrf_token %}
+      {{ create_form.as_p }}
+      <button class="btn btn-primary" style="width:auto;" type="submit">Create Dispute</button>
+    </form>
+  </article>
+  <article class="card">
+    <h2 class="section-title">Dispute Workflow</h2>
+    <p class="small">Use status transitions: Open -> Under Review -> Resolved/Rejected.</p>
+    <p class="small">Resolution types: Refund, Partial Refund, No Action, Adjustment.</p>
+    <a class="btn btn-soft" href="{% url 'billing-list' %}" style="display:block;text-align:center;">Back to Billing</a>
+  </article>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <div class="row" style="justify-content:space-between;align-items:center;">
+    <h2 class="section-title" style="margin:0;">Dispute Cases</h2>
+    <a class="btn btn-soft" style="width:auto;" href="{% url 'billing-disputes-export' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
+  </div>
+  <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap;">
+    <form method="get" style="margin:0;">
+      <input type="hidden" name="tenant_id" value="{{ selected_tenant_id }}">
+      <input type="hidden" name="reason" value="{{ selected_reason }}">
+      <input type="hidden" name="q" value="{{ selected_q }}">
+      <input type="hidden" name="sort" value="{{ selected_sort }}">
+      <input type="hidden" name="order" value="{{ selected_order }}">
+      <input type="hidden" name="priority" value="{{ selected_priority }}">
+      <input type="hidden" name="opened_from" value="{{ selected_opened_from }}">
+      <input type="hidden" name="opened_to" value="{{ selected_opened_to }}">
+      <button class="btn {% if not selected_status %}btn-primary{% else %}btn-soft{% endif %}" style="width:auto;" type="submit">All</button>
+    </form>
+    <form method="get" style="margin:0;">
+      <input type="hidden" name="tenant_id" value="{{ selected_tenant_id }}">
+      <input type="hidden" name="reason" value="{{ selected_reason }}">
+      <input type="hidden" name="q" value="{{ selected_q }}">
+      <input type="hidden" name="sort" value="{{ selected_sort }}">
+      <input type="hidden" name="order" value="{{ selected_order }}">
+      <input type="hidden" name="priority" value="{{ selected_priority }}">
+      <input type="hidden" name="opened_from" value="{{ selected_opened_from }}">
+      <input type="hidden" name="opened_to" value="{{ selected_opened_to }}">
+      <input type="hidden" name="status" value="open">
+      <button class="btn {% if selected_status == 'open' %}btn-primary{% else %}btn-soft{% endif %}" style="width:auto;" type="submit">Open</button>
+    </form>
+    <form method="get" style="margin:0;">
+      <input type="hidden" name="tenant_id" value="{{ selected_tenant_id }}">
+      <input type="hidden" name="reason" value="{{ selected_reason }}">
+      <input type="hidden" name="q" value="{{ selected_q }}">
+      <input type="hidden" name="sort" value="{{ selected_sort }}">
+      <input type="hidden" name="order" value="{{ selected_order }}">
+      <input type="hidden" name="priority" value="{{ selected_priority }}">
+      <input type="hidden" name="opened_from" value="{{ selected_opened_from }}">
+      <input type="hidden" name="opened_to" value="{{ selected_opened_to }}">
+      <input type="hidden" name="status" value="under_review">
+      <button class="btn {% if selected_status == 'under_review' %}btn-primary{% else %}btn-soft{% endif %}" style="width:auto;" type="submit">Under Review</button>
+    </form>
+    <form method="get" style="margin:0;">
+      <input type="hidden" name="tenant_id" value="{{ selected_tenant_id }}">
+      <input type="hidden" name="reason" value="{{ selected_reason }}">
+      <input type="hidden" name="q" value="{{ selected_q }}">
+      <input type="hidden" name="sort" value="{{ selected_sort }}">
+      <input type="hidden" name="order" value="{{ selected_order }}">
+      <input type="hidden" name="priority" value="{{ selected_priority }}">
+      <input type="hidden" name="opened_from" value="{{ selected_opened_from }}">
+      <input type="hidden" name="opened_to" value="{{ selected_opened_to }}">
+      <input type="hidden" name="status" value="resolved">
+      <button class="btn {% if selected_status == 'resolved' %}btn-primary{% else %}btn-soft{% endif %}" style="width:auto;" type="submit">Resolved</button>
+    </form>
+    <form method="get" style="margin:0;">
+      <input type="hidden" name="tenant_id" value="{{ selected_tenant_id }}">
+      <input type="hidden" name="reason" value="{{ selected_reason }}">
+      <input type="hidden" name="q" value="{{ selected_q }}">
+      <input type="hidden" name="sort" value="{{ selected_sort }}">
+      <input type="hidden" name="order" value="{{ selected_order }}">
+      <input type="hidden" name="opened_from" value="{{ selected_opened_from }}">
+      <input type="hidden" name="opened_to" value="{{ selected_opened_to }}">
+      <input type="hidden" name="status" value="pending">
+      <input type="hidden" name="priority" value="high">
+      <button class="btn {% if selected_priority == 'high' %}btn-primary{% else %}btn-soft{% endif %}" style="width:auto;" type="submit">High Priority</button>
+    </form>
+  </div>
+  <form method="get" style="margin-top:10px;">
+    <div class="filters">
+      <input type="text" name="q" value="{{ selected_q }}" placeholder="Search by dispute code" />
+      <select name="tenant_id">
+        <option value="">All Tenants</option>
+        {% for t in tenant_options %}
+          <option value="{{ t.id }}" {% if selected_tenant_id == t.id|stringformat:"s" %}selected{% endif %}>{{ t.name }}</option>
+        {% endfor %}
+      </select>
+      <select name="status">
+        <option value="">All Statuses</option>
+        <option value="pending" {% if selected_status == "pending" %}selected{% endif %}>Pending (Open + Under Review)</option>
+        {% for code, label in status_options %}
+          <option value="{{ code }}" {% if selected_status == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="reason">
+        <option value="">All Reasons</option>
+        {% for code, label in reason_options %}
+          <option value="{{ code }}" {% if selected_reason == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="priority">
+        {% for code, label in priority_options %}
+          <option value="{{ code }}" {% if selected_priority == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="sort">
+        {% for code, label in sort_options %}
+          <option value="{{ code }}" {% if selected_sort == code %}selected{% endif %}>Sort: {{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="order">
+        <option value="desc" {% if selected_order == "desc" %}selected{% endif %}>Order: Desc</option>
+        <option value="asc" {% if selected_order == "asc" %}selected{% endif %}>Order: Asc</option>
+      </select>
+      <input type="date" name="opened_from" value="{{ selected_opened_from }}" />
+      <input type="date" name="opened_to" value="{{ selected_opened_to }}" />
+      <button class="btn btn-primary" style="width:auto;" type="submit">Apply Filters</button>
+      <a class="btn btn-soft" style="width:auto;" href="{% url 'billing-disputes' %}">Reset</a>
+    </div>
+  </form>
+  {% if auto_triage_sort_applied %}
+    <p class="small" style="margin:4px 0 10px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;padding:8px 10px;border-radius:10px;">
+      Default triage order is active: oldest pending disputes are shown first. Set Sort/Order to override.
+    </p>
+  {% endif %}
+  <table class="list">
+    <thead><tr><th>Code</th><th>Tenant</th><th>Booking</th><th>Reason</th><th>Status</th><th>Resolution</th><th>Opened</th><th>Urgency</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for d in disputes %}
+      <tr>
+        <td>{{ d.code }}</td>
+        <td>{{ d.tenant.name }}</td>
+        <td>{% if d.transaction %}{{ d.transaction.booking_ref }}{% else %}-{% endif %}</td>
+        <td>{{ d.get_reason_display }}</td>
+        <td><span class="badge {% if d.status == 'resolved' %}success{% elif d.status == 'open' %}pending{% else %}off{% endif %}">{{ d.get_status_display }}</span></td>
+        <td>{% if d.resolution_type %}{{ d.get_resolution_type_display }}{% else %}-{% endif %}</td>
+        <td>{{ d.opened_at|date:"Y-m-d H:i" }}</td>
+        <td><span class="badge {{ d.urgency_class }}">{{ d.urgency_label }}</span></td>
+        <td>
+          {% if is_super_admin or 'billing.settle' in permission_codes %}
+          <form method="post" action="{% url 'billing-dispute-update' d.id %}" style="display:flex;gap:6px;align-items:center;">
+            {% csrf_token %}
+            <select name="status" style="margin:0;min-width:130px;">
+              <option value="open" {% if d.status == 'open' %}selected{% endif %}>Open</option>
+              <option value="under_review" {% if d.status == 'under_review' %}selected{% endif %}>Under Review</option>
+              <option value="resolved" {% if d.status == 'resolved' %}selected{% endif %}>Resolved</option>
+              <option value="rejected" {% if d.status == 'rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+            <select name="resolution_type" style="margin:0;min-width:140px;">
+              <option value="" {% if not d.resolution_type %}selected{% endif %}>-</option>
+              <option value="refund" {% if d.resolution_type == 'refund' %}selected{% endif %}>Refund</option>
+              <option value="partial_refund" {% if d.resolution_type == 'partial_refund' %}selected{% endif %}>Partial Refund</option>
+              <option value="no_action" {% if d.resolution_type == 'no_action' %}selected{% endif %}>No Action</option>
+              <option value="adjustment" {% if d.resolution_type == 'adjustment' %}selected{% endif %}>Adjustment</option>
+            </select>
+            <input type="text" name="resolution_notes" value="{{ d.resolution_notes }}" placeholder="Notes" style="margin:0;min-width:160px;">
+            <button class="btn btn-soft" style="width:auto;padding:5px 10px;" type="submit">Save</button>
+          </form>
+          {% else %}
+          -
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="9">No disputes found.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if page_obj %}
+  <div class="row" style="justify-content:space-between;align-items:center;margin-top:12px;">
+    <span class="small">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} total)</span>
+    <div class="row" style="gap:8px;">
+      {% if page_obj.has_previous %}
+        <a class="btn btn-soft" style="width:auto;" href="?{% if page_query %}{{ page_query }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a class="btn btn-soft" style="width:auto;" href="?{% if page_query %}{{ page_query }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

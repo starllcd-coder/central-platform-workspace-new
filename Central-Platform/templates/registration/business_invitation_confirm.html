@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<main class="dss-login-wrap">
+  <section class="dss-login-shell">
+    <aside class="dss-login-left">
+      <img class="dss-login-main-logo" src="{% static 'Logo.png' %}" alt="DSS Core" />
+      <h1>Activate your business account</h1>
+      <p>Create a private password for Central Platform access.</p>
+    </aside>
+    <section class="dss-login-panel">
+      <h2>Account <span>Invitation</span></h2>
+      {% if validlink %}
+      <form method="post" class="dss-login-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <label for="id_new_password1">New password</label>
+        {{ form.new_password1 }}
+        {{ form.new_password1.errors }}
+        <label for="id_new_password2">Confirm password</label>
+        {{ form.new_password2 }}
+        {{ form.new_password2.errors }}
+        <button class="dss-signin-btn" type="submit">Activate Account</button>
+      </form>
+      {% else %}
+      <p class="dss-login-errors">This invitation link is invalid or expired. Ask Central Platform staff to resend it.</p>
+      {% endif %}
+    </section>
+  </section>
+</main>
+{% endblock %}

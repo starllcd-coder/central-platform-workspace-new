@@ -1,0 +1,74 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Central Platform | Apps Control</title>
+  <link rel="icon" type="image/x-icon" href="assets/DSS_icon.ico" />
+  <link rel="stylesheet" href="static/css/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand" href="dashboard.html">
+        <img src="assets/Icon.png" alt="Icon" />
+        <div>
+          <b>Central Platform</b><br />
+          <span>Super Admin</span>
+        </div>
+      </a>
+      <nav class="nav">
+        <a href="dashboard.html" class="">Dashboard</a>
+        <a href="tenants.html" class="">Tenants</a>
+        <a href="modules.html" class="active">Apps Control</a>
+        <a href="pricing.html" class="">Plans & Pricing</a>
+        <a href="billing.html" class="">Billing</a>
+      </nav>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <div class="row" style="gap:10px;align-items:center;">
+          <button class="btn btn-soft mobile-toggle" data-menu-btn>Menu</button>
+          <h1>Apps Control</h1>
+        </div>
+        <div class="row">
+          <span class="small">April 17, 2026</span>
+          <a class="btn btn-soft" href="login.html">Logout</a>
+        </div>
+      </div>
+      <section class="module-grid">
+  <article class="card module-card">
+    <h3>StayLux</h3>
+    <p class="small">Hotel and apartment management module.</p>
+    <div class="row"><span>Tenant module enabled</span><input class="toggle" type="checkbox" checked /></div>
+    <div class="row"><span>Marketplace listing</span><input class="toggle" type="checkbox" /></div>
+  </article>
+  <article class="card module-card">
+    <h3>DriveSphere</h3>
+    <p class="small">Fleet, reservations, and rental operations.</p>
+    <div class="row"><span>Tenant module enabled</span><input class="toggle" type="checkbox" checked /></div>
+    <div class="row"><span>Marketplace listing</span><input class="toggle" type="checkbox" checked /></div>
+  </article>
+  <article class="card module-card">
+    <h3>Laundrex</h3>
+    <p class="small">Laundry operations and order tracking module.</p>
+    <div class="row"><span>Tenant module enabled</span><input class="toggle" type="checkbox" checked /></div>
+    <div class="row"><span>Marketplace listing</span><input class="toggle" type="checkbox" /></div>
+  </article>
+</section>
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Integration Endpoints</h2>
+  <table class="list">
+    <thead><tr><th>Module</th><th>Base URL</th><th>Health</th><th>Last Sync</th></tr></thead>
+    <tbody>
+      <tr><td>StayLux</td><td>/integrations/staylux</td><td><span class="badge success">Healthy</span></td><td>2 min ago</td></tr>
+      <tr><td>DriveSphere</td><td>/integrations/drivesphere</td><td><span class="badge success">Healthy</span></td><td>1 min ago</td></tr>
+      <tr><td>Laundrex</td><td>/integrations/laundrex</td><td><span class="badge pending">Degraded</span></td><td>8 min ago</td></tr>
+    </tbody>
+  </table>
+</section>
+    </main>
+  </div>
+  <script src="static/js/app.js"></script>
+</body>
+</html>

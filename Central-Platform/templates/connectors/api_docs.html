@@ -1,0 +1,32 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Connector API Docs{% endblock %}
+{% block page_content %}
+<section class="card">
+  <h2 class="section-title">API Governance</h2>
+  <table class="list">
+    <tbody>
+      <tr><td>API Version</td><td>{{ api_version }}</td></tr>
+      <tr><td>General Rate Limit</td><td>{{ general_rate_limit }} / {{ rate_limit_window }}s</td></tr>
+      <tr><td>Connector Rate Limit</td><td>{{ connector_rate_limit }} / {{ rate_limit_window }}s</td></tr>
+      <tr><td>Deprecation Date</td><td>{{ deprecation_date|default:"-" }}</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Connector Endpoints</h2>
+  <table class="list">
+    <thead><tr><th>Endpoint</th><th>Method</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>/api/connectors/health/</code></td><td>GET</td><td>Health check</td></tr>
+      <tr><td><code>/api/connectors/tenant/sync/</code></td><td>POST</td><td>Tenant status sync</td></tr>
+      <tr><td><code>/api/connectors/usage/report/</code></td><td>POST</td><td>Usage ingestion</td></tr>
+      <tr><td><code>/api/connectors/webhooks/events/</code></td><td>POST</td><td>Webhook event ingestion</td></tr>
+    </tbody>
+  </table>
+  <p class="small" style="margin-top:10px;">
+    Response headers include <code>X-API-Version</code>, <code>X-RateLimit-Limit</code>,
+    <code>X-RateLimit-Remaining</code>, and <code>X-RateLimit-Window</code>.
+  </p>
+</section>
+{% endblock %}

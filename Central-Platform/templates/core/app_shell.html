@@ -1,0 +1,128 @@
+﻿{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="app">
+  <aside class="sidebar">
+    <a class="brand" href="{% url 'dashboard' %}">
+      {% if active_tenant_branding and active_tenant_branding.logo_url %}
+      <img src="{{ active_tenant_branding.logo_url }}" alt="Brand Logo" />
+      {% else %}
+      <img src="{% static 'Logo.png' %}" alt="Icon" />
+      {% endif %}
+      {% if active_tenant_branding and active_tenant_branding.brand_name %}
+      <b>{{ active_tenant_branding.brand_name }}</b>
+      {% endif %}
+    </a>
+    <nav class="nav nav-main">
+      <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+      {% if is_super_admin or 'tenants.manage' in permission_codes or 'modules.assign' in permission_codes %}
+      <a href="{% url 'tenant-list' %}" class="{% if request.resolver_match.url_name == 'tenant-list' or request.resolver_match.url_name == 'tenant-create' or request.resolver_match.url_name == 'tenant-demo-create' %}active{% endif %}">Tenants</a>
+      <a href="{% url 'tenant-agreements' %}" class="{% if request.resolver_match.url_name == 'tenant-agreements' %}active{% endif %}">Agreements</a>
+      {% endif %}
+      <a href="{% url 'demo-request-create' %}" class="{% if request.resolver_match.url_name == 'demo-request-create' %}active{% endif %}">Request Demo</a>
+      <a href="{% url 'my-demo-requests' %}" class="{% if request.resolver_match.url_name == 'my-demo-requests' %}active{% endif %}">My Demo Requests</a>
+      {% if is_super_admin or 'tenants.manage' in permission_codes %}
+      <a href="{% url 'demo-request-list' %}" class="{% if request.resolver_match.url_name == 'demo-request-list' %}active{% endif %}">Demo Requests</a>
+      {% endif %}
+      {% if is_super_admin or 'pricing.manage' in permission_codes or 'commission.manage' in permission_codes %}
+      <a href="{% url 'pricing-list' %}" class="{% if request.resolver_match.url_name == 'pricing-list' %}active{% endif %}">Plans & Pricing</a>
+      {% endif %}
+      {% if is_super_admin or 'billing.settle' in permission_codes or 'commission.manage' in permission_codes %}
+      <a href="{% url 'billing-list' %}" class="{% if request.resolver_match.url_name == 'billing-list' %}active{% endif %}">Billing</a>
+      <a href="{% url 'billing-disputes' %}" class="{% if request.resolver_match.url_name == 'billing-disputes' %}active{% endif %}">Disputes</a>
+      <a href="{% url 'stay-business-dashboard' %}" class="{% if request.resolver_match.url_name == 'stay-business-dashboard' %}active{% endif %}">Stay Business</a>
+      {% endif %}
+      <a href="{% url 'stay-customer-dashboard' %}" class="{% if request.resolver_match.url_name == 'stay-customer-dashboard' %}active{% endif %}">Stay Customer</a>
+      {% if is_super_admin or 'reports.view' in permission_codes %}
+      <a href="{% url 'stay-admin-panel' %}" class="{% if request.resolver_match.url_name == 'stay-admin-panel' %}active{% endif %}">Stay Admin</a>
+      <a href="{% url 'stay-report' %}" class="{% if request.resolver_match.url_name == 'stay-report' %}active{% endif %}">Stay Report</a>
+      {% endif %}
+      {% if is_super_admin or 'reports.view' in permission_codes %}
+      <a href="{% url 'ops-analytics-dashboard' %}" class="{% if request.resolver_match.url_name == 'ops-analytics-dashboard' %}active{% endif %}">Analytics</a>
+      <a href="{% url 'ops-marketplace-ranking' %}" class="{% if request.resolver_match.url_name == 'ops-marketplace-ranking' %}active{% endif %}">Marketplace Ranking</a>
+      <a href="{% url 'ops-notifications-list' %}" class="{% if request.resolver_match.url_name == 'ops-notifications-list' %}active{% endif %}">Notifications</a>
+      <a href="{% url 'ops-audit-logs-list' %}" class="{% if request.resolver_match.url_name == 'ops-audit-logs-list' %}active{% endif %}">Audit Logs</a>
+      {% endif %}
+      {% if is_super_admin or 'connectors.manage' in permission_codes %}
+      <a href="{% url 'connector-api-docs' %}" class="{% if request.resolver_match.url_name == 'connector-api-docs' %}active{% endif %}">API Docs</a>
+      {% endif %}
+    </nav>
+    <form method="post" action="{% url 'logout' %}" style="margin:0;">
+      {% csrf_token %}
+      <button class="btn btn-soft sidebar-logout" type="submit">Log Out</button>
+    </form>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div class="row" style="gap:10px;align-items:center;">
+        <button class="btn btn-soft mobile-toggle" data-menu-btn>Menu</button>
+        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+      </div>
+      <div class="row">
+        {% if accessible_tenants %}
+        <form method="post" action="{% url 'switch-tenant' %}" style="margin:0;">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <select name="tenant_id" onchange="this.form.submit()" style="margin:0;min-width:190px;">
+            {% for t in accessible_tenants %}
+              <option value="{{ t.id }}" {% if active_tenant and t.id == active_tenant.id %}selected{% endif %}>
+                {{ t.tenant_code }} - {{ t.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </form>
+        {% elif active_tenant %}
+        <span class="small">Tenant: {{ active_tenant.tenant_code }} - {{ active_tenant.name }}</span>
+        {% endif %}
+        {% if active_tenant and active_tenant.is_demo %}
+        <span class="badge {% if active_tenant.is_demo_expired %}off{% else %}pending{% endif %}">
+          Demo{% if active_tenant.demo_expires_on %} until {{ active_tenant.demo_expires_on }}{% endif %}
+        </span>
+        {% endif %}
+        {% if accessible_modules %}
+        <form method="post" action="{% url 'switch-module' %}" style="margin:0;">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <select name="module_id" onchange="this.form.submit()" style="margin:0;min-width:170px;">
+            <option value="all" {% if not active_module %}selected{% endif %}>All Modules</option>
+            {% for m in accessible_modules %}
+              <option value="{{ m.id }}" {% if active_module and m.id == active_module.id %}selected{% endif %}>{{ m.name }}</option>
+            {% endfor %}
+          </select>
+        </form>
+        {% endif %}
+        <div class="topbar-user">
+          <div class="avatar-circle small">{{ user_avatar_initials }}</div>
+          <div>
+            <div class="profile-name">{{ request.user.username }}</div>
+            <div class="profile-role">{{ user_role_label }}</div>
+          </div>
+        </div>
+        <form method="post" action="{% url 'logout' %}" style="margin:0;">
+          {% csrf_token %}
+          <button class="btn btn-soft" type="submit">Logout</button>
+        </form>
+      </div>
+    </div>
+    {% if accessible_modules %}
+    <div class="module-chip-row">
+      <form method="post" action="{% url 'switch-module' %}" style="margin:0;">
+        {% csrf_token %}
+        <input type="hidden" name="module_id" value="all">
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button class="module-chip {% if not active_module %}active{% endif %}" type="submit">All</button>
+      </form>
+      {% for m in accessible_modules %}
+      <form method="post" action="{% url 'switch-module' %}" style="margin:0;">
+        {% csrf_token %}
+        <input type="hidden" name="module_id" value="{{ m.id }}">
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button class="module-chip {% if active_module and active_module.id == m.id %}active{% endif %}" type="submit">{{ m.name }}</button>
+      </form>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% block page_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

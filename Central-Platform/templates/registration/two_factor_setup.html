@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <h2>Two-Factor Setup</h2>
+  <p>Use this secret in your authenticator app:</p>
+  <pre>{{ two_factor.secret }}</pre>
+  <p>Issuer: {{ issuer }}</p>
+  <form method="post" action="{% url 'two-factor-enable' %}">
+    {% csrf_token %}
+    <label for="code">Verification code</label>
+    <input id="code" name="code" type="text" maxlength="6" required>
+    <button type="submit">Enable 2FA</button>
+  </form>
+  {% if two_factor.is_enabled %}
+  <hr>
+  <h3>Regenerate Backup Codes</h3>
+  <form method="post" action="{% url 'two-factor-regenerate-backup-codes' %}">
+    {% csrf_token %}
+    <label for="regen_code">Verification code</label>
+    <input id="regen_code" name="code" type="text" maxlength="6" required>
+    <button type="submit">Regenerate</button>
+  </form>
+  {% endif %}
+  {% if backup_codes %}
+  <hr>
+  <h3>Backup Codes</h3>
+  <p>Use each code once. Store them safely.</p>
+  <ul>
+    {% for code in backup_codes %}
+    <li><code>{{ code }}</code></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endblock %}

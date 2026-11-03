@@ -1,0 +1,29 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Stay | Extension Revenue Report{% endblock %}
+{% block page_content %}
+<section class="kpis">
+  <article class="card kpi"><div class="label">Original Revenue</div><div class="value">{{ totals.original_revenue|default:"0" }}</div></article>
+  <article class="card kpi"><div class="label">Extension Revenue</div><div class="value">{{ totals.extension_revenue|default:"0" }}</div></article>
+  <article class="card kpi"><div class="label">Extension Count</div><div class="value">{{ totals.extension_count|default:"0" }}</div></article>
+</section>
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Revenue Rows</h2>
+  <table class="list">
+    <thead><tr><th>Booking</th><th>Type</th><th>Parent</th><th>Tenant</th><th>Total</th><th>Payment Status</th></tr></thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.booking_id }}</td>
+        <td>{{ row.get_booking_type_display }}</td>
+        <td>{% if row.parent_booking %}{{ row.parent_booking.booking_id }}{% else %}-{% endif %}</td>
+        <td>{{ row.tenant.name }}</td>
+        <td>{{ row.total_amount }} {{ row.currency }}</td>
+        <td>{{ row.get_payment_status_display }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6">No rows.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

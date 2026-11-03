@@ -1,0 +1,24 @@
+﻿{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Central Platform{% endblock %}</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'DSS_icon.ico' %}" />
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+  {% if active_tenant_branding and active_tenant_branding.is_active %}
+  <style>
+    :root {
+      --brand: {{ active_tenant_branding.primary_color|default:"#0f766e" }};
+      --brand-2: {{ active_tenant_branding.accent_color|default:"#0369a1" }};
+      --brand-3: {{ active_tenant_branding.accent_color|default:"#14b8a6" }};
+    }
+  </style>
+  {% endif %}
+</head>
+<body>
+  {% block content %}{% endblock %}
+  <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

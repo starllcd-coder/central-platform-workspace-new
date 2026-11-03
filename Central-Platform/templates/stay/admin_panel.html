@@ -1,0 +1,32 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Stay | Admin Panel{% endblock %}
+{% block page_content %}
+<section class="kpis">
+  <article class="card kpi"><div class="label">Total Stay Revenue</div><div class="value">{{ totals.gross|default:"0" }}</div></article>
+  <article class="card kpi"><div class="label">Original Revenue</div><div class="value">{{ totals.original_revenue|default:"0" }}</div></article>
+  <article class="card kpi"><div class="label">Extension Revenue</div><div class="value">{{ totals.extension_revenue|default:"0" }}</div></article>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Original Bookings + Linked Extensions</h2>
+  <table class="list">
+    <thead><tr><th>Booking</th><th>Tenant</th><th>Type</th><th>Parent</th><th>Unit</th><th>Dates</th><th>Total</th><th>Commission</th></tr></thead>
+    <tbody>
+      {% for b in bookings %}
+      <tr>
+        <td>{{ b.booking_id }}</td>
+        <td>{{ b.tenant.name }}</td>
+        <td>{{ b.get_booking_type_display }}</td>
+        <td>{% if b.parent_booking %}{{ b.parent_booking.booking_id }}{% else %}-{% endif %}</td>
+        <td>{{ b.unit.name }}</td>
+        <td>{{ b.check_in }} to {{ b.check_out }}</td>
+        <td>{{ b.total_amount }} {{ b.currency }}</td>
+        <td>{% if b.commission_record %}{{ b.commission_record.commission_amount }}{% else %}0{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8">No bookings.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

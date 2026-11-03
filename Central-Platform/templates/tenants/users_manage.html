@@ -1,0 +1,44 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Business Users{% endblock %}
+{% block page_content %}
+<section class="card">
+  <div class="row" style="margin-bottom:12px;">
+    <div>
+      <h2 class="section-title" style="margin:0;">{{ tenant.name }} Users</h2>
+      <div class="small">Invite business owners or team members. Passwords are created by users through secure email links.</div>
+    </div>
+    <a href="{% url 'tenant-list' %}">Back to Tenants</a>
+  </div>
+
+  <form method="post" style="margin-bottom:24px;">
+    {% csrf_token %}
+    <div class="grid grid-3">
+      <label>Full name{{ form.full_name }}</label>
+      <label>Email{{ form.email }}</label>
+      <label>Access level{{ form.access_level }}</label>
+    </div>
+    {{ form.errors }}
+    <button class="btn btn-primary" type="submit" style="width:auto;margin-top:12px;">Send Invitation</button>
+  </form>
+
+  <table class="list">
+    <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for membership in memberships %}
+      <tr>
+        <td>{{ membership.user.get_full_name|default:membership.user.username }}</td>
+        <td>{{ membership.user.email }}</td>
+        <td>
+          {% for assignment in membership.membership_roles.all %}
+            {{ assignment.role.name }}{% if not forloop.last %}, {% endif %}
+          {% empty %}-{% endfor %}
+        </td>
+        <td><span class="badge {% if membership.status == 'active' %}success{% elif membership.status == 'invited' %}pending{% else %}off{% endif %}">{{ membership.get_status_display }}</span></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4">No business users have been invited.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

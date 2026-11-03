@@ -1,0 +1,21 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Request Demo{% endblock %}
+{% block page_content %}
+<section class="card" style="max-width:760px;">
+  <h2 class="section-title">Request a Demo Account</h2>
+  <p class="small" style="margin-bottom:14px;">
+    Submit the business details below. Central Platform staff must approve the request before any demo tenant is activated.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {{ form.as_p }}
+    <div class="row">
+      <button class="btn btn-primary" type="submit" style="width:auto;">Submit Demo Request</button>
+      {% if is_super_admin or 'tenants.manage' in permission_codes %}
+      <a class="btn btn-soft" href="{% url 'demo-request-list' %}" style="width:auto;">View Requests</a>
+      {% endif %}
+    </div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Tenants{% endblock %}
+{% block page_content %}
+<section class="card">
+  <div class="row" style="margin-bottom:12px;">
+    <h2 class="section-title" style="margin:0;">Tenant Directory</h2>
+    {% if is_super_admin or 'tenants.manage' in permission_codes %}
+    <div class="row" style="gap:8px;">
+      <a class="btn btn-primary" href="{% url 'tenant-create' %}" style="width:auto;">+ New Tenant</a>
+      <a class="btn btn-soft" href="{% url 'tenant-demo-create' %}" style="width:auto;">+ New Demo Tenant</a>
+    </div>
+    {% endif %}
+  </div>
+  <input data-tenant-search placeholder="Search by business name, owner, tenant code" />
+  <table class="list">
+    <thead><tr><th>Business</th><th>Code</th><th>Enabled Apps</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for row in tenant_rows %}
+      {% with t=row.tenant %}
+      <tr data-tenant-row>
+        <td>
+          {{ t.name }}
+          {% if t.is_demo %}
+          <span class="badge {% if t.is_demo_expired %}off{% else %}pending{% endif %}">
+            Demo{% if t.demo_expires_on %} until {{ t.demo_expires_on }}{% endif %}
+          </span>
+          {% endif %}
+        </td>
+        <td>{{ t.tenant_code }}</td>
+        <td>
+          {% for mod in row.modules %}
+            <div>
+              {{ mod.name }}
+              {% if mod.marketplace_enabled %}
+                <span class="badge {{ mod.state_class }}">{{ mod.state_label }}</span>
+              {% endif %}
+            </div>
+          {% empty %}
+            -
+          {% endfor %}
+        </td>
+        <td>
+          <span class="badge {% if t.status == 'active' %}success{% elif t.status == 'trial' %}pending{% else %}off{% endif %}">{{ t.get_status_display }}</span>
+          <div class="small">{% if t.is_demo %}Demo sandbox{% else %}Production{% endif %}</div>
+        </td>
+        <td>
+          {% if is_super_admin or 'modules.assign' in permission_codes %}
+          <a href="{% url 'tenant-modules-manage' t.id %}">Manage Modules</a>
+          {% if is_super_admin or 'tenants.manage' in permission_codes %}
+          | <a href="{% url 'tenant-structure-manage' t.id %}">Manage Structure</a>
+          | <a href="{% url 'tenant-branding-manage' t.id %}">Manage Branding</a>
+          | <a href="{% url 'tenant-users-manage' t.id %}">Manage Users</a>
+          {% endif %}
+          {% else %}
+          -
+          {% endif %}
+        </td>
+      </tr>
+      {% endwith %}
+    {% empty %}
+      <tr><td colspan="5">No tenants found.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

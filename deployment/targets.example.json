@@ -1,0 +1,21 @@
+{
+  "centralUrl": "https://central.example.invalid",
+  "nexivoUrl": "https://www.example.invalid",
+  "products": {
+    "drivesphere": {
+      "baseUrl": "https://drive.example.invalid",
+      "tenantCode": "SET-TENANT-CODE"
+    },
+    "staylux": {
+      "baseUrl": "https://stay.example.invalid",
+      "tenantCode": "SET-TENANT-CODE",
+      "propertyId": "SET-LOCAL-PROPERTY-ID"
+    },
+    "laundrex": {
+      "baseUrl": "https://laundry.example.invalid",
+      "tenantCode": "SET-TENANT-CODE",
+      "branchCode": "SET-LOCAL-BRANCH-CODE",
+      "currency": "OMR"
+    }
+  }
+}

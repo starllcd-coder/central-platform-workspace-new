@@ -1,0 +1,49 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Legal Agreements{% endblock %}
+{% block page_content %}
+{% if messages %}
+  {% for message in messages %}
+    <p class="small" style="color:#166534;background:#dcfce7;padding:10px 12px;border-radius:10px;">{{ message }}</p>
+  {% endfor %}
+{% endif %}
+
+<section class="card">
+  <h2 class="section-title">Agreement Acceptance</h2>
+  {% if tenant %}
+    <p class="small">Active tenant: <strong>{{ tenant.name }}</strong> ({{ tenant.tenant_code }})</p>
+    <table class="list">
+      <thead><tr><th>Code</th><th>Title</th><th>Type</th><th>Version</th><th>Effective</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{ row.document.code }}</td>
+          <td>{{ row.document.title }}</td>
+          <td>{{ row.document.get_document_type_display }}</td>
+          <td>{{ row.document.version }}</td>
+          <td>{{ row.document.effective_from }}</td>
+          <td><span class="badge {% if row.accepted %}success{% else %}pending{% endif %}">{% if row.accepted %}Accepted{% else %}Pending{% endif %}</span></td>
+          <td>
+            {% if not row.accepted %}
+              {% if is_super_admin or 'tenants.manage' in permission_codes %}
+                <form method="post" action="{% url 'tenant-agreement-accept' row.document.id %}">
+                  {% csrf_token %}
+                  <button class="btn btn-soft" style="width:auto;padding:5px 10px;" type="submit">Accept</button>
+                </form>
+              {% else %}
+                -
+              {% endif %}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7">No active agreements.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="small">No tenant is available in your context. Select a tenant via `?tenant_id=`.</p>
+  {% endif %}
+</section>
+{% endblock %}

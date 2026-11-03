@@ -1,0 +1,228 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Billing{% endblock %}
+{% block page_content %}
+{% if messages %}
+  {% for message in messages %}
+    <p class="small" style="color:#166534;background:#dcfce7;padding:10px 12px;border-radius:10px;">{{ message }}</p>
+  {% endfor %}
+{% endif %}
+
+<section class="kpis">
+  <article class="card kpi"><div class="label">Total Gross</div><div class="value">{{ totals.gross|default:"0.00" }}</div><div class="trend">Paid transactions</div></article>
+  <article class="card kpi"><div class="label">Total Commission</div><div class="value">{{ totals.commission|default:"0.00" }}</div><div class="trend up">Platform revenue</div></article>
+  <article class="card kpi"><div class="label">Total Net Payout</div><div class="value">{{ totals.net|default:"0.00" }}</div><div class="trend">To businesses</div></article>
+  <article class="card kpi"><div class="label">Cash Commission Due</div><div class="value">{{ totals.cash_due|default:"0.00" }}</div><div class="trend warn">To invoice businesses</div></article>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <div class="row">
+    <h2 class="section-title" style="margin:0;">Disputes</h2>
+    <a class="btn btn-soft" href="{% url 'billing-disputes' %}" style="width:auto;">Open Dispute Management</a>
+  </div>
+</section>
+
+<section class="grid-2">
+  {% if is_super_admin or 'billing.settle' in permission_codes %}
+  <article class="card">
+    <h2 class="section-title">Post Payment Transaction</h2>
+    <form method="post" action="{% url 'billing-transaction-create' %}">
+      {% csrf_token %}
+      {{ tx_form.as_p }}
+      <button class="btn btn-primary" style="width:auto;" type="submit">Post Transaction</button>
+    </form>
+  </article>
+  {% else %}
+  <article class="card">
+    <h2 class="section-title">Post Payment Transaction</h2>
+    <p class="small">You do not have billing settlement permission.</p>
+  </article>
+  {% endif %}
+  {% if is_super_admin or 'billing.settle' in permission_codes or 'commission.manage' in permission_codes %}
+  <article class="card">
+    <h2 class="section-title">Settlement Actions</h2>
+    <form method="post" action="{% url 'billing-payout-run' %}" style="margin-bottom:14px;">
+      {% csrf_token %}
+      {{ payout_form.as_p }}
+      <button class="btn btn-primary" style="width:auto;" type="submit">Run Payout Batch</button>
+    </form>
+    <hr style="border:0;border-top:1px solid #dbe4f0;margin:14px 0;">
+    <form method="post" action="{% url 'billing-cash-invoice-generate' %}">
+      {% csrf_token %}
+      {{ invoice_form.as_p }}
+      <button class="btn btn-soft" style="width:auto;" type="submit">Generate Cash Commission Invoice</button>
+    </form>
+  </article>
+  {% else %}
+  <article class="card">
+    <h2 class="section-title">Settlement Actions</h2>
+    <p class="small">You do not have permission for payout or invoice actions.</p>
+  </article>
+  {% endif %}
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Recent Transactions</h2>
+  <table class="list">
+    <thead><tr><th>Tenant</th><th>Booking</th><th>Channel</th><th>Status</th><th>Gross</th><th>Commission</th><th>Net</th><th>Settlement</th><th>Occurred</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for t in transactions %}
+      <tr>
+        <td>{{ t.tenant.name }}</td>
+        <td>{{ t.booking_ref }}</td>
+        <td>{{ t.get_payment_channel_display }}</td>
+        <td><span class="badge {% if t.status == 'paid' %}success{% elif t.status == 'refunded' %}pending{% else %}off{% endif %}">{{ t.get_status_display }}</span></td>
+        <td>{{ t.gross_amount }}</td>
+        <td>{{ t.commission_amount }}</td>
+        <td>{{ t.net_amount }}</td>
+        <td><span class="badge {% if t.settlement_state == 'settled' %}success{% elif t.settlement_state == 'pending' %}pending{% else %}off{% endif %}">{{ t.get_settlement_state_display }}</span></td>
+        <td>{{ t.occurred_at|date:"Y-m-d H:i" }}</td>
+        <td>
+          {% if t.status == 'paid' %}
+            {% if is_super_admin or 'billing.settle' in permission_codes %}
+              <a href="{% url 'billing-refund-process' t.id %}">Process Refund</a>
+            {% else %}
+              -
+            {% endif %}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="10">No transactions yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="grid-2" style="margin-top:14px;">
+  <article class="card">
+    <h2 class="section-title">Recent Settlements</h2>
+    <table class="list">
+      <thead><tr><th>Batch</th><th>Tenant</th><th>Tx Count</th><th>Gross</th><th>Commission</th><th>Net</th></tr></thead>
+      <tbody>
+      {% for s in settlements %}
+        <tr>
+          <td>{% if s.payout_batch %}{{ s.payout_batch.code }}{% else %}-{% endif %}</td>
+          <td>{{ s.tenant.name }}</td>
+          <td>{{ s.source_tx_count }}</td>
+          <td>{{ s.gross_amount }}</td>
+          <td>{{ s.commission_amount }}</td>
+          <td>{{ s.net_payout }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No settlement records yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <h2 class="section-title" style="margin-top:14px;">Refund Records</h2>
+    <table class="list">
+      <thead><tr><th>Booking</th><th>Type</th><th>Customer Refund</th><th>Commission Reversal</th><th>Business Recovery</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for r in refunds %}
+        <tr>
+          <td>{{ r.transaction.booking_ref }}</td>
+          <td>{{ r.get_refund_type_display }} ({{ r.refund_percent }}%)</td>
+          <td>{{ r.customer_refund_amount }}</td>
+          <td>{{ r.commission_reversal_amount }}</td>
+          <td>{{ r.business_recovery_amount }}</td>
+          <td><span class="badge {% if r.status == 'processed' %}success{% else %}pending{% endif %}">{{ r.get_status_display }}</span></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No refunds yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </article>
+  <article class="card">
+    <h2 class="section-title">Cash Commission Outstanding</h2>
+    <table class="list">
+      <thead><tr><th>Tenant</th><th>Amount</th></tr></thead>
+      <tbody>
+      {% for row in cash_outstanding %}
+        <tr><td>{{ row.tenant__name }}</td><td>{{ row.amount }}</td></tr>
+      {% empty %}
+        <tr><td colspan="2">No cash commission pending.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <h2 class="section-title" style="margin-top:14px;">Commission Invoices</h2>
+    <table class="list">
+      <thead><tr><th>Code</th><th>Tenant</th><th>Amount</th><th>Status</th><th>Due</th></tr></thead>
+      <tbody>
+      {% for i in invoices %}
+        <tr>
+          <td>{{ i.code }}</td>
+          <td>{{ i.tenant.name }}</td>
+          <td>{{ i.amount_due }}</td>
+          <td><span class="badge {% if i.status == 'paid' %}success{% elif i.status == 'pending' %}pending{% else %}off{% endif %}">{{ i.get_status_display }}</span></td>
+          <td>{{ i.due_date }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">No commission invoices yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <h2 class="section-title" style="margin-top:14px;">Wallet Accounts</h2>
+    <table class="list">
+      <thead><tr><th>Type</th><th>Tenant</th><th>Available</th><th>Pending</th><th>Currency</th></tr></thead>
+      <tbody>
+      {% for w in wallets %}
+        <tr>
+          <td>{{ w.get_account_type_display }}</td>
+          <td>{% if w.tenant %}{{ w.tenant.name }}{% else %}-{% endif %}</td>
+          <td>{{ w.available_balance }}</td>
+          <td>{{ w.pending_balance }}</td>
+          <td>{{ w.currency }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">No wallets yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <h2 class="section-title" style="margin-top:14px;">Withdrawals</h2>
+    {% if active_tenant_wallet and (is_super_admin or 'billing.settle' in permission_codes) %}
+    <form method="post" action="{% url 'billing-withdrawal-create' %}">
+      {% csrf_token %}
+      {{ withdrawal_create_form.as_p }}
+      <p class="small">Active tenant wallet available: {{ active_tenant_wallet.available_balance }} {{ active_tenant_wallet.currency }}</p>
+      <button class="btn btn-soft" style="width:auto;" type="submit">Request Withdrawal</button>
+    </form>
+    {% else %}
+    <p class="small">Select a tenant with wallet balance to request withdrawals.</p>
+    {% endif %}
+    <table class="list" style="margin-top:10px;">
+      <thead><tr><th>ID</th><th>Tenant</th><th>Amount</th><th>Status</th><th>Requested</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for wd in withdrawals %}
+        <tr>
+          <td>WD-{{ wd.id }}</td>
+          <td>{{ wd.tenant.name }}</td>
+          <td>{{ wd.amount }} {{ wd.currency }}</td>
+          <td><span class="badge {% if wd.status == 'paid' %}success{% elif wd.status == 'requested' or wd.status == 'approved' %}pending{% else %}off{% endif %}">{{ wd.get_status_display }}</span></td>
+          <td>{{ wd.requested_at|date:"Y-m-d H:i" }}</td>
+          <td>
+            {% if is_super_admin or 'billing.settle' in permission_codes %}
+            <form method="post" action="{% url 'billing-withdrawal-update' wd.id %}" style="display:flex;gap:6px;align-items:center;">
+              {% csrf_token %}
+              <select name="action" style="width:auto;">
+                <option value="approve">Approve</option>
+                <option value="reject">Reject</option>
+                <option value="mark_paid">Mark Paid</option>
+              </select>
+              <input type="text" name="notes" placeholder="notes" style="width:140px;" />
+              <button class="btn btn-soft" style="width:auto;" type="submit">Apply</button>
+            </form>
+            {% else %}
+            -
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No withdrawal requests yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </article>
+</section>
+{% endblock %}

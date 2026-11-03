@@ -1,0 +1,22 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Process Refund{% endblock %}
+{% block page_content %}
+<section class="card" style="max-width:780px;">
+  <h2 class="section-title">Process Refund / Cancellation</h2>
+  <p class="small">
+    Tenant: {{ tx.tenant.name }} |
+    Booking: {{ tx.booking_ref }} |
+    Channel: {{ tx.get_payment_channel_display }} |
+    Gross: {{ tx.gross_amount }} |
+    Status: {{ tx.get_status_display }}
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="row">
+      <button class="btn btn-primary" style="width:auto;" type="submit">Process</button>
+      <a class="btn btn-soft" href="{% url 'billing-list' %}">Back</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

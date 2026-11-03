@@ -1,0 +1,63 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Central Platform | Billing</title>
+  <link rel="icon" type="image/x-icon" href="assets/DSS_icon.ico" />
+  <link rel="stylesheet" href="static/css/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand" href="dashboard.html">
+        <img src="assets/Icon.png" alt="Icon" />
+        <div>
+          <b>Central Platform</b><br />
+          <span>Super Admin</span>
+        </div>
+      </a>
+      <nav class="nav">
+        <a href="dashboard.html" class="">Dashboard</a>
+        <a href="tenants.html" class="">Tenants</a>
+        <a href="modules.html" class="">Apps Control</a>
+        <a href="pricing.html" class="">Plans & Pricing</a>
+        <a href="billing.html" class="active">Billing</a>
+      </nav>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <div class="row" style="gap:10px;align-items:center;">
+          <button class="btn btn-soft mobile-toggle" data-menu-btn>Menu</button>
+          <h1>Billing & Settlements</h1>
+        </div>
+        <div class="row">
+          <span class="small">April 17, 2026</span>
+          <a class="btn btn-soft" href="login.html">Logout</a>
+        </div>
+      </div>
+      <section class="grid-2" style="margin-top:0;">
+  <article class="card">
+    <h2 class="section-title">Recent Settlements</h2>
+    <table class="list">
+      <thead><tr><th>Tenant</th><th>Gross</th><th>Commission</th><th>Net Payout</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Al Noor Mobility</td><td>1,100 OMR</td><td>132 OMR</td><td>968 OMR</td><td><span class="badge success">Sent</span></td></tr>
+        <tr><td>Marina Suites</td><td>820 OMR</td><td>98 OMR</td><td>722 OMR</td><td><span class="badge pending">Pending</span></td></tr>
+        <tr><td>CleanWave Laundry</td><td>410 OMR</td><td>49 OMR</td><td>361 OMR</td><td><span class="badge pending">Review</span></td></tr>
+      </tbody>
+    </table>
+  </article>
+  <article class="card">
+    <h2 class="section-title">Actions</h2>
+    <p class="small">Run payout batch and generate statement exports.</p>
+    <button class="btn btn-primary" style="margin-bottom:10px;">Run Weekly Payout</button>
+    <button class="btn btn-soft" style="width:100%;margin-bottom:10px;">Export Commission Report</button>
+    <button class="btn btn-soft" style="width:100%;">Open Disputes</button>
+  </article>
+</section>
+    </main>
+  </div>
+  <script src="static/js/app.js"></script>
+</body>
+</html>

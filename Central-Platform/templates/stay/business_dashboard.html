@@ -1,0 +1,62 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Stay | Business Dashboard{% endblock %}
+{% block page_content %}
+{% if messages %}
+  {% for message in messages %}
+    <p class="small" style="color:#166534;background:#dcfce7;padding:10px 12px;border-radius:10px;">{{ message }}</p>
+  {% endfor %}
+{% endif %}
+
+<section class="card">
+  <h2 class="section-title">Create Stay Booking</h2>
+  <form method="post" class="grid grid-4">
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="create_booking" />
+    {{ create_form.as_p }}
+    <button class="btn btn-primary" style="width:auto;" type="submit">Create Booking</button>
+  </form>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Extend Stay</h2>
+  <form method="post" class="grid grid-4">
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="extend_booking" />
+    {{ extension_form.as_p }}
+    <button class="btn btn-primary" style="width:auto;" type="submit">Extend Stay</button>
+  </form>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Daily Rate Setup</h2>
+  <form method="post" action="{% url 'stay-rate-create' %}" class="grid grid-4">
+    {% csrf_token %}
+    {{ rate_form.as_p }}
+    <button class="btn btn-soft" style="width:auto;" type="submit">Save Rate</button>
+  </form>
+</section>
+
+<section class="card" style="margin-top:14px;">
+  <h2 class="section-title">Bookings (Original + Extensions)</h2>
+  <table class="list">
+    <thead><tr><th>Booking</th><th>Parent</th><th>Tenant</th><th>Unit</th><th>Dates</th><th>Total</th><th>Payment</th><th>Commission</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for b in bookings %}
+      <tr>
+        <td>{{ b.booking_id }}</td>
+        <td>{% if b.parent_booking %}{{ b.parent_booking.booking_id }}{% else %}-{% endif %}</td>
+        <td>{{ b.tenant.name }}</td>
+        <td>{{ b.unit.name }}</td>
+        <td>{{ b.check_in }} to {{ b.check_out }}</td>
+        <td>{{ b.total_amount }} {{ b.currency }}</td>
+        <td>{{ b.get_payment_rule_display }} / {{ b.get_payment_status_display }}</td>
+        <td>{% if b.commission_record %}{{ b.commission_record.commission_amount }}{% else %}0{% endif %}</td>
+        <td>{{ b.get_status_display }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9">No bookings yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

@@ -1,0 +1,107 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 248 250 252;
+    --foreground: 15 23 42;
+  }
+
+  * {
+    @apply border-slate-200;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white;
+  }
+
+  [dir="rtl"] body {
+    font-family: var(--font-arabic-body), var(--font-body), sans-serif;
+  }
+
+  [dir="rtl"] .font-heading {
+    font-family: var(--font-arabic-heading), var(--font-heading), sans-serif;
+  }
+}
+
+@layer components {
+  .nexivo-container {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-padding {
+    @apply py-16 md:py-24;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-brand-700;
+  }
+
+  .bg-luxury-gradient {
+    background:
+      radial-gradient(circle at top left, rgba(21, 112, 239, 0.1), transparent 28rem),
+      radial-gradient(circle at top right, rgba(200, 164, 93, 0.2), transparent 24rem),
+      linear-gradient(180deg, #fffdf8 0%, #f8fafc 100%);
+  }
+
+  .bg-nexivo-radial {
+    background:
+      radial-gradient(circle at 20% 20%, rgba(21, 112, 239, 0.11), transparent 28rem),
+      radial-gradient(circle at 80% 10%, rgba(200, 164, 93, 0.18), transparent 24rem),
+      #f8fafc;
+  }
+
+  .bg-luxury-mist {
+    background: linear-gradient(180deg, #f8fafc 0%, #fffaf0 100%);
+  }
+
+  .bg-midnight-gradient {
+    background:
+      radial-gradient(circle at top left, rgba(21, 112, 239, 0.2), transparent 25rem),
+      radial-gradient(circle at bottom right, rgba(200, 164, 93, 0.22), transparent 22rem),
+      #0f172a;
+  }
+
+  .shadow-soft {
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  }
+
+  .shadow-premium {
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.14);
+  }
+
+  .rounded-4xl {
+    border-radius: 2rem;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}

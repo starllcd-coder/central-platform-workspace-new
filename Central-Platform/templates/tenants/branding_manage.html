@@ -1,0 +1,59 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Tenant Branding{% endblock %}
+{% block page_content %}
+{% if messages %}
+  {% for message in messages %}
+    <p class="small" style="color:#166534;background:#dcfce7;padding:10px 12px;border-radius:10px;">{{ message }}</p>
+  {% endfor %}
+{% endif %}
+
+<section class="card" style="max-width:860px;">
+  <div class="row" style="margin-bottom:12px;">
+    <h2 class="section-title" style="margin:0;">{{ tenant.name }} | White-Label Branding</h2>
+    <a class="btn btn-soft" href="{% url 'tenant-list' %}">Back</a>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary" style="width:auto;" type="submit">Save Branding</button>
+  </form>
+</section>
+
+<section class="card" style="margin-top:14px;max-width:860px;">
+  <h2 class="section-title">Preview</h2>
+  <p><strong>Brand Name:</strong> {{ branding.brand_name|default:tenant.name }}</p>
+  <p><strong>Logo URL:</strong> {{ branding.logo_url|default:"-" }}</p>
+  <p><strong>Primary Color:</strong> {{ branding.primary_color }}</p>
+  <p><strong>Accent Color:</strong> {{ branding.accent_color }}</p>
+  <p><strong>Custom Domain:</strong> {{ branding.custom_domain|default:"-" }}</p>
+  <p><strong>Domain Status:</strong> {{ branding.get_domain_verification_status_display }}</p>
+  <p><strong>Domain Verified At:</strong> {{ branding.domain_verified_at|default:"-" }}</p>
+  <p><strong>Domain Last Check:</strong> {{ branding.domain_last_checked_at|default:"-" }}</p>
+  <p><strong>Domain Failure Reason:</strong> {{ branding.domain_failure_reason|default:"-" }}</p>
+  <p><strong>Support Email:</strong> {{ branding.support_email|default:"-" }}</p>
+  <p><strong>Active:</strong> {% if branding.is_active %}Yes{% else %}No{% endif %}</p>
+</section>
+
+<section class="card" style="margin-top:14px;max-width:860px;">
+  <h2 class="section-title">Custom Domain Activation</h2>
+  {% if branding.custom_domain %}
+    <p class="small">1) Point your domain DNS TXT record to:</p>
+    <p><code>{{ branding.domain_txt_record_value|default:"cp-verify token not generated yet" }}</code></p>
+    <p class="small">2) Ensure the domain resolves (A/AAAA) to your edge and then run DNS verification.</p>
+    <form method="post" action="{% url 'tenant-branding-domain-refresh-token' tenant.id %}" style="margin-bottom:10px;">
+      {% csrf_token %}
+      <button class="btn btn-soft" style="width:auto;" type="submit">Refresh Verification Token</button>
+    </form>
+    <form method="post" action="{% url 'tenant-branding-domain-verify' tenant.id %}">
+      {% csrf_token %}
+      <button class="btn btn-primary" style="width:auto;margin-top:8px;" type="submit">Run DNS Verification</button>
+    </form>
+    <p class="small" style="margin-top:10px;">
+      Domain status API:
+      <code>/tenants/{{ tenant.id }}/branding/api/domain-status/</code>
+    </p>
+  {% else %}
+    <p class="small">Set a custom domain above, save branding, then return here to activate it.</p>
+  {% endif %}
+</section>
+{% endblock %}

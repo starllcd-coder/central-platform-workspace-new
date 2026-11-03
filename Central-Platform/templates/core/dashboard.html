@@ -1,0 +1,133 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_content %}
+<section class="kpis">
+  <article class="card kpi"><div class="label">Active Tenants</div><div class="value">{{ active_tenants }}</div><div class="trend up">Live businesses</div></article>
+  <article class="card kpi"><div class="label">Enabled Modules</div><div class="value">{{ active_modules }}</div><div class="trend up">Apps connected</div></article>
+  <article class="card kpi"><div class="label">Marketplace Modules</div><div class="value">{{ marketplace_enabled_modules }}</div><div class="trend">Booking enabled</div></article>
+  <article class="card kpi"><div class="label">Marketplace In Grace</div><div class="value">{{ marketplace_in_grace_modules }}</div><div class="trend attention">Commission paused</div></article>
+  <article class="card kpi"><div class="label">Marketplace Commission Active</div><div class="value">{{ marketplace_commission_active_modules }}</div><div class="trend up">Revenue active</div></article>
+  <article class="card kpi"><div class="label">Active Subscriptions</div><div class="value">{{ subscriptions }}</div><div class="trend">Billing ready</div></article>
+  <article class="card kpi"><div class="label">Registered Modules</div><div class="value">{{ modules_count }}</div><div class="trend">Platform catalog</div></article>
+</section>
+<section class="kpis" style="margin-top:14px;">
+  <article class="card kpi"><div class="label">Wallet Available</div><div class="value">{{ wallet_available_total }}</div><div class="trend up">Ready for payouts</div></article>
+  <article class="card kpi"><div class="label">Wallet Pending</div><div class="value">{{ wallet_pending_total }}</div><div class="trend attention">Awaiting settlement</div></article>
+  <article class="card kpi"><div class="label">Withdrawals Requested</div><div class="value">{{ withdrawal_requested_count }}</div><div class="trend">Ops queue</div></article>
+  <article class="card kpi"><div class="label">Withdrawals Approved</div><div class="value">{{ withdrawal_approved_count }}</div><div class="trend">Awaiting payment</div></article>
+  <article class="card kpi"><div class="label">Withdrawals Paid</div><div class="value">{{ withdrawal_paid_count }}</div><div class="trend up">Completed</div></article>
+</section>
+
+{% if can_view_disputes %}
+<section class="kpis" style="margin-top:14px;">
+  <article class="card kpi">
+    <div class="label">Pending Disputes</div>
+    <div class="value">{{ dispute_counts.pending }}</div>
+    <div class="trend warn">High priority (&gt;48h): {{ dispute_counts.high_priority_pending }}</div>
+    <a class="btn btn-primary" style="display:inline-block;width:auto;margin-top:8px;" href="{% url 'billing-disputes' %}?status=pending">Triage Now</a>
+  </article>
+  <article class="card kpi"><div class="label">All Disputes</div><div class="value">{{ dispute_counts.all }}</div><a class="small" href="{% url 'billing-disputes' %}">Open dispute center</a></article>
+  <article class="card kpi"><div class="label">Under Review</div><div class="value">{{ dispute_counts.under_review }}</div><a class="small" href="{% url 'billing-disputes' %}?status=under_review">View under review</a></article>
+  <article class="card kpi"><div class="label">Resolved</div><div class="value">{{ dispute_counts.resolved }}</div><a class="small" href="{% url 'billing-disputes' %}?status=resolved">View resolved</a></article>
+</section>
+{% endif %}
+
+<section class="grid-2">
+  <article class="card">
+    <div class="row" style="margin-bottom:10px;">
+      <h2 class="section-title" style="margin:0;">Platform Overview</h2>
+      <span class="small">Last 12 months</span>
+    </div>
+    <svg viewBox="0 0 640 210" style="width:100%;height:auto;display:block;">
+      <defs>
+        <linearGradient id="dashLineGrad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#ff5b61" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#ff5b61" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M25 182 C120 140, 170 116, 250 134 C315 150, 360 123, 430 110 C485 100, 545 74, 615 36 L615 190 L25 190 Z" fill="url(#dashLineGrad)"></path>
+      <path d="M25 182 C120 140, 170 116, 250 134 C315 150, 360 123, 430 110 C485 100, 545 74, 615 36" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round"></path>
+      <g fill="#ef4444">
+        <circle cx="25" cy="182" r="4"></circle><circle cx="90" cy="156" r="4"></circle>
+        <circle cx="155" cy="133" r="4"></circle><circle cx="220" cy="124" r="4"></circle>
+        <circle cx="285" cy="136" r="4"></circle><circle cx="350" cy="126" r="4"></circle>
+        <circle cx="415" cy="112" r="4"></circle><circle cx="480" cy="96" r="4"></circle>
+        <circle cx="545" cy="72" r="4"></circle><circle cx="615" cy="36" r="4"></circle>
+      </g>
+    </svg>
+    <div class="row" style="margin-top:10px;align-items:flex-start;">
+      <div>
+        <div class="value" style="font-size:36px;line-height:1;">{{ active_tenants }}</div>
+        <div class="small">Live Tenant Count</div>
+      </div>
+      <div>
+        <div class="value" style="font-size:36px;line-height:1;">{{ active_modules }}</div>
+        <div class="small">Enabled App Modules</div>
+      </div>
+      <div>
+        <div class="value" style="font-size:36px;line-height:1;">{{ subscriptions }}</div>
+        <div class="small">Active Subscriptions</div>
+      </div>
+    </div>
+  </article>
+  <article class="card">
+    <div class="row" style="margin-bottom:8px;">
+      <h2 class="section-title" style="margin:0;">Recent Activity</h2>
+      <a class="small" href="{% url 'ops-audit-logs-list' %}">View All</a>
+    </div>
+    {% for t in recent_tenants %}
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #e5e7eb;">
+        <div>
+          <div style="font-weight:700;color:#1f2937;">{{ t.name }} updated in platform</div>
+          <div class="small">{{ t.created_at|date:"Y-m-d H:i" }}</div>
+        </div>
+        <span class="badge {% if t.status == 'active' %}success{% elif t.status == 'trial' %}pending{% else %}off{% endif %}">{{ t.get_status_display }}</span>
+      </div>
+    {% empty %}
+      <p class="small">No recent tenant activity.</p>
+    {% endfor %}
+  </article>
+</section>
+
+<section class="grid-2">
+  <article class="card">
+    <div class="row" style="margin-bottom:8px;">
+      <h2 class="section-title" style="margin:0;">Agreement Compliance</h2>
+      <a class="small" href="{% url 'tenant-agreements' %}">Review</a>
+    </div>
+    <table class="list">
+      <thead><tr><th>Tenant</th><th>Billing</th><th>Marketplace</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for row in agreement_compliance_rows %}
+        <tr>
+          <td>{{ row.tenant.name }}</td>
+          <td>{% if row.billing_ok %}<span class="badge success">Compliant</span>{% else %}<span class="badge pending">Pending</span>{% endif %}</td>
+          <td>{% if row.marketplace_ok %}<span class="badge success">Compliant</span>{% else %}<span class="badge pending">Pending</span>{% endif %}</td>
+          <td><a href="{% url 'tenant-agreements' %}?tenant_id={{ row.tenant.id }}">Resolve</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4">No pending agreement issues.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </article>
+  <article class="card">
+    <div class="row" style="margin-bottom:8px;">
+      <h2 class="section-title" style="margin:0;">Module Distribution</h2>
+      <a class="small" href="{% url 'tenant-list' %}">Open Tenants</a>
+    </div>
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:16px;align-items:center;">
+      <div style="position:relative;width:118px;height:118px;border-radius:50%;background:conic-gradient(#ef4444 0 38%, #f97316 38% 62%, #cbd5e1 62% 100%);margin:auto;">
+        <div style="position:absolute;inset:16px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:800;color:#1f2937;">{{ modules_count }}</div>
+      </div>
+      <div>
+        <div class="row" style="justify-content:flex-start;gap:8px;margin-bottom:8px;"><span class="badge danger">Primary</span><span class="small">Top module share</span></div>
+        <div class="row" style="justify-content:flex-start;gap:8px;margin-bottom:8px;"><span class="badge attention">Secondary</span><span class="small">Growing module</span></div>
+        <div class="row" style="justify-content:flex-start;gap:8px;"><span class="badge off">Other</span><span class="small">Remaining modules</span></div>
+      </div>
+    </div>
+    <div style="height:10px;"></div>
+    <a class="btn btn-soft" href="{% url 'tenant-list' %}" style="display:block;text-align:center;">Manage App Modules</a>
+  </article>
+</section>
+{% endblock %}

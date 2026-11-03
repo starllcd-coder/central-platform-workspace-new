@@ -1,0 +1,48 @@
+name: CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deploy target
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+      revision:
+        description: Git revision to deploy; defaults to the selected workflow revision
+        required: false
+        type: string
+      rollback:
+        description: Roll back to the previously recorded revision
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  deploy:
+    if: ${{ inputs.rollback == false }}
+    runs-on: [self-hosted, "${{ inputs.target }}"]
+    environment: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Deploy and verify
+        shell: pwsh
+        run: |
+          $revision = "${{ inputs.revision }}"
+          if (-not $revision) { $revision = "${{ github.sha }}" }
+          ./scripts/deploy_release.ps1 -Environment "${{ inputs.target }}" -Revision $revision
+
+  rollback:
+    if: ${{ inputs.rollback == true }}
+    runs-on: [self-hosted, "${{ inputs.target }}"]
+    environment: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Roll back and verify
+        shell: pwsh
+        run: ./scripts/rollback_release.ps1 -Environment "${{ inputs.target }}"

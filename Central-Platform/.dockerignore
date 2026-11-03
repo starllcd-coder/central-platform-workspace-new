@@ -1,0 +1,10 @@
+# Docker / runtime
+__pycache__/
+*.pyc
+.env
+.venv/
+staticfiles/
+
+# Local DB artifacts
+*.sqlite3
+backups/

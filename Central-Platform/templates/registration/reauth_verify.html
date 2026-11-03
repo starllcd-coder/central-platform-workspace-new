@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <h2>Re-authentication Required</h2>
+  <p>For sensitive actions, confirm your password to continue.</p>
+  <form method="post">
+    {% csrf_token %}
+    <input name="next" type="hidden" value="{{ request.GET.next }}">
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" required>
+    <button class="btn btn-primary" type="submit">Verify</button>
+  </form>
+</div>
+{% endblock %}

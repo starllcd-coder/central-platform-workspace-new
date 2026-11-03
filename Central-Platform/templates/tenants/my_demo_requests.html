@@ -1,0 +1,53 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}My Demo Requests{% endblock %}
+{% block page_content %}
+<section class="card">
+  <div class="row" style="margin-bottom:12px;">
+    <div>
+      <h2 class="section-title" style="margin:0;">My Demo Requests</h2>
+      <div class="small">Track approval status, review notes, and demo access details.</div>
+    </div>
+    <a class="btn btn-primary" href="{% url 'demo-request-create' %}" style="width:auto;">Request New Demo</a>
+  </div>
+  <table class="list">
+    <thead>
+      <tr>
+        <th>Business</th>
+        <th>Module</th>
+        <th>Requested</th>
+        <th>Status</th>
+        <th>Decision</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in demo_requests %}
+      <tr>
+        <td>
+          <div>{{ row.business_name }}</div>
+          <div class="small">{{ row.requested_tenant_code|default:"Code assigned after approval" }}</div>
+        </td>
+        <td>{{ row.get_product_interest_display|default:row.get_module_type_display }}</td>
+        <td>{{ row.created_at|date:"M j, Y" }}<div class="small">{{ row.requested_duration_days }} days</div></td>
+        <td>
+          <span class="badge {% if row.status == 'approved' %}success{% elif row.status == 'requested' %}pending{% else %}off{% endif %}">{{ row.get_status_display }}</span>
+        </td>
+        <td>
+          {% if row.approved_tenant %}
+          <div>{{ row.approved_tenant.tenant_code }}</div>
+          {% if row.approved_tenant.is_demo %}
+          <div class="small">Expires {{ row.approved_tenant.demo_expires_on|date:"M j, Y" }}</div>
+          {% else %}
+          <div class="small">Converted to production</div>
+          {% endif %}
+          {% endif %}
+          {% if row.review_notes %}<div class="small">{{ row.review_notes }}</div>{% endif %}
+          {% if row.status == 'requested' %}<div class="small">Awaiting Central approval</div>{% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">You have not submitted a demo request yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

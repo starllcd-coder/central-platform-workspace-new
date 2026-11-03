@@ -1,0 +1,22 @@
+﻿{% extends "core/app_shell.html" %}
+{% block page_title %}{% if is_demo_flow %}Create Demo Tenant{% else %}Create Tenant{% endif %}{% endblock %}
+{% block page_content %}
+<section class="card" style="max-width:760px;">
+  <h2 class="section-title">{{ page_heading }}</h2>
+  {% if is_demo_flow %}
+  <p class="small" style="margin-bottom:14px;">
+    Demo tenants are isolated sandbox accounts. They are labeled as demo, expire automatically,
+    and cannot use live billing, payments, or connector traffic.
+  </p>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {{ form.as_p }}
+    <div class="row">
+      <button class="btn btn-primary" type="submit" style="width:auto;">{{ submit_label }}</button>
+      <a class="btn btn-soft" href="{% url 'tenant-list' %}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

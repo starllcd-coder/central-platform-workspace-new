@@ -1,0 +1,61 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Central Platform | Tenants</title>
+  <link rel="icon" type="image/x-icon" href="assets/DSS_icon.ico" />
+  <link rel="stylesheet" href="static/css/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand" href="dashboard.html">
+        <img src="assets/Icon.png" alt="Icon" />
+        <div>
+          <b>Central Platform</b><br />
+          <span>Super Admin</span>
+        </div>
+      </a>
+      <nav class="nav">
+        <a href="dashboard.html" class="">Dashboard</a>
+        <a href="tenants.html" class="active">Tenants</a>
+        <a href="modules.html" class="">Apps Control</a>
+        <a href="pricing.html" class="">Plans & Pricing</a>
+        <a href="billing.html" class="">Billing</a>
+      </nav>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <div class="row" style="gap:10px;align-items:center;">
+          <button class="btn btn-soft mobile-toggle" data-menu-btn>Menu</button>
+          <h1>Tenants</h1>
+        </div>
+        <div class="row">
+          <span class="small">April 17, 2026</span>
+          <a class="btn btn-soft" href="login.html">Logout</a>
+        </div>
+      </div>
+      <section class="card">
+  <h2 class="section-title">Tenants</h2>
+  <div class="filters">
+    <input data-tenant-search placeholder="Search by business name, owner, tenant ID" />
+    <select><option>All Modules</option><option>StayLux</option><option>DriveSphere</option><option>Laundrex</option></select>
+    <select><option>All Status</option><option>Active</option><option>Trial</option><option>Paused</option></select>
+    <button class="btn btn-primary">+ New Tenant</button>
+  </div>
+  <table class="list">
+    <thead><tr><th>Business</th><th>Enabled Apps</th><th>Plan</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr data-tenant-row><td>Al Noor Mobility</td><td>DriveSphere</td><td>v1 One-Time + Commission</td><td><span class="badge success">Active</span></td><td><a href="#">View</a></td></tr>
+      <tr data-tenant-row><td>Marina Suites</td><td>StayLux, Laundrex</td><td>v2 Subscription</td><td><span class="badge success">Active</span></td><td><a href="#">View</a></td></tr>
+      <tr data-tenant-row><td>CleanWave Laundry</td><td>Laundrex</td><td>v2 Subscription</td><td><span class="badge pending">Trial</span></td><td><a href="#">View</a></td></tr>
+      <tr data-tenant-row><td>Desert Star Rentals</td><td>DriveSphere, StayLux</td><td>v1 Grandfathered</td><td><span class="badge off">Paused</span></td><td><a href="#">View</a></td></tr>
+    </tbody>
+  </table>
+</section>
+    </main>
+  </div>
+  <script src="static/js/app.js"></script>
+</body>
+</html>

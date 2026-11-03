@@ -1,0 +1,50 @@
+{% extends "core/app_shell.html" %}
+{% block page_title %}Manage Modules{% endblock %}
+{% block page_content %}
+<section class="card" style="max-width:920px;">
+  <div class="row" style="margin-bottom:12px;">
+    <h2 class="section-title" style="margin:0;">{{ tenant.name }} | Module Access</h2>
+    <a class="btn btn-soft" href="{% url 'tenant-list' %}">Back</a>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <p class="small" style="color:#166534;background:#dcfce7;padding:10px 12px;border-radius:10px;">{{ message }}</p>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <table class="list">
+      <thead><tr><th>Module</th><th>Enable Module</th><th>Enable Marketplace</th><th>Commission Status</th></tr></thead>
+      <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>
+            <strong>{{ row.module.name }}</strong><br />
+            <span class="small">{{ row.module.code }}</span>
+          </td>
+          <td>
+            <input type="checkbox" name="modules" value="{{ row.module.id }}" {% if row.enabled %}checked{% endif %} style="width:auto;margin:0;" />
+          </td>
+          <td>
+            <input type="checkbox" name="marketplace_modules" value="{{ row.module.id }}" {% if row.marketplace_enabled %}checked{% endif %} style="width:auto;margin:0;" />
+          </td>
+          <td>
+            <span class="badge {{ row.commission_state_class }}">{{ row.commission_state_label }}</span>
+            {% if row.marketplace_activated_at %}
+              <div class="small">Activated: {{ row.marketplace_activated_at|date:"Y-m-d H:i" }}</div>
+            {% endif %}
+            {% if row.commission_grace_until %}
+              <div class="small">Grace ends: {{ row.commission_grace_until|date:"Y-m-d" }}</div>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div style="height:12px;"></div>
+    <button class="btn btn-primary" type="submit" style="width:auto;">Save Module Settings</button>
+  </form>
+</section>
+{% endblock %}
